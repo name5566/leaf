@@ -3,18 +3,23 @@ package recordfile
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"os"
 	"reflect"
 )
 
-const defComma = '\t'
-const defComment = '#'
+const (
+	defComma   = ','
+	defComment = '#'
+)
 
 type RecordFile struct {
-	Comma   rune
-	Comment rune
-	types   []reflect.Kind
-	stType  reflect.Type
+	Comma      rune
+	Comment    rune
+	kindFields []reflect.Kind
+	tagFields  []reflect.StructTag
+	records    []interface{}
+	indexes    [](map[interface{}]interface{})
 }
 
 func New(st interface{}) (*RecordFile, error) {
@@ -24,11 +29,14 @@ func New(st interface{}) (*RecordFile, error) {
 	}
 
 	rf := new(RecordFile)
-	rf.types = make([]reflect.Kind, t.NumField())
-	rf.stType = t
+	rf.kindFields = make([]reflect.Kind, t.NumField())
+	rf.tagFields = make([]reflect.StructTag, t.NumField())
 
 	for i := 0; i < t.NumField(); i++ {
-		k := t.Field(i).Type.Kind()
+		f := t.Field(i)
+
+		// kind
+		k := f.Type.Kind()
 		if k == reflect.Bool ||
 			k == reflect.Int8 ||
 			k == reflect.Int16 ||
@@ -40,9 +48,18 @@ func New(st interface{}) (*RecordFile, error) {
 			k == reflect.Float32 ||
 			k == reflect.Float64 ||
 			k == reflect.String {
-			rf.types[i] = k
+			rf.kindFields[i] = k
 		} else {
 			return nil, errors.New("invalid type: " + k.String())
+		}
+
+		// tag
+		tag := f.Tag
+		if tag == "" ||
+			tag == "index" {
+			rf.tagFields[i] = tag
+		} else {
+			return nil, errors.New("invalid tag: " + string(tag))
 		}
 	}
 
@@ -66,35 +83,27 @@ func (rf *RecordFile) Read(name string) error {
 	reader := csv.NewReader(f)
 	reader.Comma = rf.Comma
 	reader.Comment = rf.Comment
-	records, err := reader.ReadAll()
+	lines, err := reader.ReadAll()
 	if err != nil {
 		return err
 	}
 
-	// types
-	if len(records) >= 1 {
-		for i, v := range rf.types {
-
+	for n, line := range lines {
+		// kind
+		if n == 0 {
+			for i, k := range rf.kindFields {
+				fmt.Println(i, k)
+				fmt.Println(line[i])
+			}
 		}
+
+		// desc
+		if n == 1 {
+			continue
+		}
+
+		// data
 	}
 
-	if len(records) >= 3 {
-
-	}
-
 	return nil
 }
-
-func (rf *RecordFile) NumRecord() int {
-	return len(rf.types)
-}
-
-/*
-func (rf *RecordFile) Record(i int32) interface{} {
-	return nil
-}
-
-func (rf *RecordFile) RecordByIndex(index int32) interface{} {
-	return nil
-}
-*/
