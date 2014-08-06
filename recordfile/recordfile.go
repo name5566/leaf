@@ -9,71 +9,70 @@ import (
 	"strconv"
 )
 
-var Comma rune = ','
+var Comma rune = '\t'
 var Comment rune = '#'
 
-type index map[interface{}]interface{}
+type Index map[interface{}]interface{}
 
 type RecordFile struct {
 	Comma      rune
 	Comment    rune
-	kindFields []reflect.Kind
-	tagFields  []reflect.StructTag
 	typeRecord reflect.Type
 	records    []interface{}
-	indexes    []index
+	indexes    []Index
 }
 
 func New(st interface{}) (*RecordFile, error) {
-	t := reflect.TypeOf(st)
-	if t == nil || t.Kind() != reflect.Struct {
+	typeRecord := reflect.TypeOf(st)
+	if typeRecord == nil || typeRecord.Kind() != reflect.Struct {
 		return nil, errors.New("st must be a struct")
 	}
 
-	rf := new(RecordFile)
-	rf.kindFields = make([]reflect.Kind, t.NumField())
-	rf.tagFields = make([]reflect.StructTag, t.NumField())
-	rf.typeRecord = t
+	for i := 0; i < typeRecord.NumField(); i++ {
+		f := typeRecord.Field(i)
 
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-
-		k := f.Type.Kind()
-		if k == reflect.Bool ||
-			k == reflect.Int8 ||
-			k == reflect.Int16 ||
-			k == reflect.Int32 ||
-			k == reflect.Int64 ||
-			k == reflect.Uint8 ||
-			k == reflect.Uint16 ||
-			k == reflect.Uint32 ||
-			k == reflect.Uint64 ||
-			k == reflect.Float32 ||
-			k == reflect.Float64 ||
-			k == reflect.String {
-			rf.kindFields[i] = k
-		} else {
-			return nil, errors.New("invalid type: " + k.String())
+		kind := f.Type.Kind()
+		switch kind {
+		case reflect.Bool:
+		case reflect.Int:
+		case reflect.Int8:
+		case reflect.Int16:
+		case reflect.Int32:
+		case reflect.Int64:
+		case reflect.Uint8:
+		case reflect.Uint16:
+		case reflect.Uint32:
+		case reflect.Uint64:
+		case reflect.Float32:
+		case reflect.Float64:
+		case reflect.String:
+		default:
+			return nil, errors.New(fmt.Sprintf("invalid type: %v %v",
+				f.Name, kind.String()))
 		}
 
 		tag := f.Tag
-		if tag == "" ||
-			tag == "index" {
-			rf.tagFields[i] = tag
-		} else {
-			return nil, errors.New("invalid tag: " + string(tag))
+		switch tag {
+		case "":
+		case "index":
+		default:
+			return nil, errors.New(fmt.Sprintf("invalid tag: %v %v",
+				f.Name, string(tag)))
 		}
 	}
+
+	rf := new(RecordFile)
+	rf.typeRecord = typeRecord
 
 	return rf, nil
 }
 
 func (rf *RecordFile) Read(name string) error {
-	f, err := os.Open(name)
+	file, err := os.Open(name)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer file.Close()
 
 	if rf.Comma == 0 {
 		rf.Comma = Comma
@@ -81,8 +80,7 @@ func (rf *RecordFile) Read(name string) error {
 	if rf.Comment == 0 {
 		rf.Comment = Comment
 	}
-
-	reader := csv.NewReader(f)
+	reader := csv.NewReader(file)
 	reader.Comma = rf.Comma
 	reader.Comment = rf.Comment
 	lines, err := reader.ReadAll()
@@ -90,69 +88,79 @@ func (rf *RecordFile) Read(name string) error {
 		return err
 	}
 
+	typeRecord := rf.typeRecord
+
 	// make records
 	records := make([]interface{}, len(lines)-1)
 
 	// make indexes
-	indexes := []index{}
-	for _, t := range rf.tagFields {
-		if t == "index" {
-			indexes = append(indexes, make(index))
+	indexes := []Index{}
+	for i := 0; i < typeRecord.NumField(); i++ {
+		tag := typeRecord.Field(i).Tag
+		if tag == "index" {
+			indexes = append(indexes, make(Index))
 		}
 	}
 
 	for n := 1; n < len(lines); n++ {
-		value := reflect.New(rf.typeRecord)
+		value := reflect.New(typeRecord)
 		records[n-1] = value.Interface()
 		record := value.Elem()
 
 		line := lines[n]
-		if len(line) != len(rf.kindFields) {
+		if len(line) != typeRecord.NumField() {
 			return errors.New(fmt.Sprintf("line %v, field count mismatch: %v %v",
-				n, len(line), len(rf.kindFields)))
+				n, len(line), typeRecord.NumField()))
 		}
 
 		iIndex := 0
 
-		for i, k := range rf.kindFields {
-			strField := line[i]
-			field := record.Field(i)
+		for i := 0; i < typeRecord.NumField(); i++ {
+			f := typeRecord.Field(i)
 
 			// records
+			strField := line[i]
+			field := record.Field(i)
+			if !field.CanSet() {
+				return errors.New(fmt.Sprintf("could not set field %v %v",
+					i, f.Name))
+			}
+
 			var err error
 
-			if k == reflect.Bool {
+			kind := f.Type.Kind()
+			if kind == reflect.Bool {
 				var v bool
 				v, err = strconv.ParseBool(strField)
 				if err == nil {
 					field.SetBool(v)
 				}
-			} else if k == reflect.Int8 ||
-				k == reflect.Int16 ||
-				k == reflect.Int32 ||
-				k == reflect.Int64 {
+			} else if kind == reflect.Int ||
+				kind == reflect.Int16 ||
+				kind == reflect.Int32 ||
+				kind == reflect.Int64 {
 				var v int64
-				v, err = strconv.ParseInt(strField, 0, field.Type().Bits())
+				v, err = strconv.ParseInt(strField, 0, f.Type.Bits())
 				if err == nil {
 					field.SetInt(v)
 				}
-			} else if k == reflect.Uint8 ||
-				k == reflect.Uint16 ||
-				k == reflect.Uint32 ||
-				k == reflect.Uint64 {
+			} else if kind == reflect.Uint8 ||
+				kind == reflect.Uint16 ||
+				kind == reflect.Uint32 ||
+				kind == reflect.Uint64 {
 				var v uint64
-				v, err = strconv.ParseUint(strField, 0, field.Type().Bits())
+				v, err = strconv.ParseUint(strField, 0, f.Type.Bits())
 				if err == nil {
 					field.SetUint(v)
 				}
-			} else if k == reflect.Float32 ||
-				k == reflect.Float64 {
+			} else if kind == reflect.Float32 ||
+				kind == reflect.Float64 {
 				var v float64
-				v, err = strconv.ParseFloat(strField, field.Type().Bits())
+				v, err = strconv.ParseFloat(strField, f.Type.Bits())
 				if err == nil {
 					field.SetFloat(v)
 				}
-			} else if k == reflect.String {
+			} else if kind == reflect.String {
 				field.SetString(strField)
 			}
 
@@ -162,7 +170,7 @@ func (rf *RecordFile) Read(name string) error {
 			}
 
 			// indexes
-			if rf.tagFields[i] == "index" {
+			if f.Tag == "index" {
 				index := indexes[iIndex]
 				iIndex++
 				if _, ok := index[field.Interface()]; ok {
@@ -188,9 +196,17 @@ func (rf *RecordFile) NumRecord() int {
 	return len(rf.records)
 }
 
-func (rf *RecordFile) Index(i int) index {
+func (rf *RecordFile) Indexes(i int) Index {
 	if i >= len(rf.indexes) {
 		return nil
 	}
 	return rf.indexes[i]
+}
+
+func (rf *RecordFile) Index(i interface{}) interface{} {
+	index := rf.Indexes(0)
+	if index == nil {
+		return nil
+	}
+	return index[i]
 }
