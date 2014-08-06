@@ -12,6 +12,8 @@ import (
 var Comma rune = ','
 var Comment rune = '#'
 
+type index map[interface{}]interface{}
+
 type RecordFile struct {
 	Comma      rune
 	Comment    rune
@@ -19,7 +21,7 @@ type RecordFile struct {
 	tagFields  []reflect.StructTag
 	typeRecord reflect.Type
 	records    []interface{}
-	indexes    [](map[interface{}]interface{})
+	indexes    []index
 }
 
 func New(st interface{}) (*RecordFile, error) {
@@ -88,11 +90,21 @@ func (rf *RecordFile) Read(name string) error {
 		return err
 	}
 
+	// make records
 	records := make([]interface{}, len(lines)-1)
+
+	// make indexes
+	indexes := []index{}
+	for _, t := range rf.tagFields {
+		if t == "index" {
+			indexes = append(indexes, make(index))
+		}
+	}
+
 	for n := 1; n < len(lines); n++ {
-		v := reflect.New(rf.typeRecord)
-		records[n-1] = v.Interface()
-		record := v.Elem()
+		value := reflect.New(rf.typeRecord)
+		records[n-1] = value.Interface()
+		record := value.Elem()
 
 		line := lines[n]
 		if len(line) != len(rf.kindFields) {
@@ -100,15 +112,18 @@ func (rf *RecordFile) Read(name string) error {
 				n, len(line), len(rf.kindFields)))
 		}
 
+		iIndex := 0
+
 		for i, k := range rf.kindFields {
-			fieldStr := line[i]
+			strField := line[i]
 			field := record.Field(i)
 
+			// records
 			var err error
 
 			if k == reflect.Bool {
 				var v bool
-				v, err = strconv.ParseBool(fieldStr)
+				v, err = strconv.ParseBool(strField)
 				if err == nil {
 					field.SetBool(v)
 				}
@@ -117,7 +132,7 @@ func (rf *RecordFile) Read(name string) error {
 				k == reflect.Int32 ||
 				k == reflect.Int64 {
 				var v int64
-				v, err = strconv.ParseInt(fieldStr, 0, field.Type().Bits())
+				v, err = strconv.ParseInt(strField, 0, field.Type().Bits())
 				if err == nil {
 					field.SetInt(v)
 				}
@@ -126,29 +141,41 @@ func (rf *RecordFile) Read(name string) error {
 				k == reflect.Uint32 ||
 				k == reflect.Uint64 {
 				var v uint64
-				v, err = strconv.ParseUint(fieldStr, 0, field.Type().Bits())
+				v, err = strconv.ParseUint(strField, 0, field.Type().Bits())
 				if err == nil {
 					field.SetUint(v)
 				}
 			} else if k == reflect.Float32 ||
 				k == reflect.Float64 {
 				var v float64
-				v, err = strconv.ParseFloat(fieldStr, field.Type().Bits())
+				v, err = strconv.ParseFloat(strField, field.Type().Bits())
 				if err == nil {
 					field.SetFloat(v)
 				}
 			} else if k == reflect.String {
-				field.SetString(fieldStr)
+				field.SetString(strField)
 			}
 
 			if err != nil {
 				return errors.New(fmt.Sprintf("parse field (row=%v, col=%v) error: %v",
 					n, i, err))
 			}
+
+			// indexes
+			if rf.tagFields[i] == "index" {
+				index := indexes[iIndex]
+				iIndex++
+				if _, ok := index[field.Interface()]; ok {
+					return errors.New(fmt.Sprintf("index error: duplicate at (row=%v, col=%v)",
+						n, i))
+				}
+				index[field.Interface()] = records[n-1]
+			}
 		}
 	}
 
 	rf.records = records
+	rf.indexes = indexes
 
 	return nil
 }
@@ -159,4 +186,11 @@ func (rf *RecordFile) Record(i int) interface{} {
 
 func (rf *RecordFile) NumRecord() int {
 	return len(rf.records)
+}
+
+func (rf *RecordFile) Index(i int) index {
+	if i >= len(rf.indexes) {
+		return nil
+	}
+	return rf.indexes[i]
 }
