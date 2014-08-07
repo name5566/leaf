@@ -1,0 +1,4 @@
+数字索引	数字类型	字符串索引	字符串类型
+1	0	one	knife
+2	0	two	cat
+3	0	three	book
