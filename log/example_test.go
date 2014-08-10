@@ -13,10 +13,11 @@ func Example() {
 	logger.Debug("will not print")
 	logger.Release("My name is %v", "Leaf")
 
-	log.SetGlobalLogger(logger)
+	log.Export(logger)
 
 	log.Debug("will not print")
 	log.Release("123")
 	log.Error("456")
 	log.Fatal("789")
+	log.Close()
 }

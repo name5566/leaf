@@ -28,6 +28,7 @@ const (
 type Logger struct {
 	level      int
 	baseLogger *log.Logger
+	baseFile   *os.File
 }
 
 func New(strLevel string, pathname string) (*Logger, error) {
@@ -48,6 +49,7 @@ func New(strLevel string, pathname string) (*Logger, error) {
 
 	// logger
 	var baseLogger *log.Logger
+	var baseFile *os.File
 	if pathname != "" {
 		now := time.Now()
 
@@ -59,12 +61,13 @@ func New(strLevel string, pathname string) (*Logger, error) {
 			now.Minute(),
 			now.Second())
 
-		f, err := os.Create(path.Join(pathname, filename))
+		file, err := os.Create(path.Join(pathname, filename))
 		if err != nil {
 			return nil, err
 		}
 
-		baseLogger = log.New(f, "", log.LstdFlags)
+		baseLogger = log.New(file, "", log.LstdFlags)
+		baseFile = file
 	} else {
 		baseLogger = log.New(os.Stdout, "", log.LstdFlags)
 	}
@@ -73,13 +76,28 @@ func New(strLevel string, pathname string) (*Logger, error) {
 	logger := new(Logger)
 	logger.level = level
 	logger.baseLogger = baseLogger
+	logger.baseFile = baseFile
 
 	return logger, nil
+}
+
+// multi-goroutine unsafe
+// It's dangerous to call the method on logging
+func (logger *Logger) Close() {
+	if logger.baseFile {
+		logger.baseFile.Close()
+	}
+
+	logger.baseLogger = nil
+	logger.baseFile = nil
 }
 
 func (logger *Logger) doPrintf(level int, printLevel string, format string, a ...interface{}) {
 	if level < logger.level {
 		return
+	}
+	if logger.baseLogger == nil {
+		panic("logger closed")
 	}
 
 	format = printLevel + format
@@ -106,25 +124,30 @@ func (logger *Logger) Fatal(format string, a ...interface{}) {
 	logger.doPrintf(fatalLevel, printFatalLevel, format, a...)
 }
 
-// global logger
-var globalLogger *Logger
+var gLogger *Logger
 
-func SetGlobalLogger(logger *Logger) {
-	globalLogger = logger
+// multi-goroutine unsafe
+// It's dangerous to call the method on logging
+func Export(logger *Logger) {
+	gLogger = logger
 }
 
 func Debug(format string, a ...interface{}) {
-	globalLogger.Debug(format, a...)
+	gLogger.Debug(format, a...)
 }
 
 func Release(format string, a ...interface{}) {
-	globalLogger.Release(format, a...)
+	gLogger.Release(format, a...)
 }
 
 func Error(format string, a ...interface{}) {
-	globalLogger.Error(format, a...)
+	gLogger.Error(format, a...)
 }
 
 func Fatal(format string, a ...interface{}) {
-	globalLogger.Fatal(format, a...)
+	gLogger.Fatal(format, a...)
+}
+
+func Close() {
+	gLogger.Close()
 }
