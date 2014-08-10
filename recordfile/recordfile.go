@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-var Comma rune = '\t'
-var Comment rune = '#'
+var Comma = '\t'
+var Comment = '#'
 
 type Index map[interface{}]interface{}
 
