@@ -83,7 +83,7 @@ func New(strLevel string, pathname string) (*Logger, error) {
 
 // It's dangerous to call the method on logging
 func (logger *Logger) Close() {
-	if logger.baseFile {
+	if logger.baseFile != nil {
 		logger.baseFile.Close()
 	}
 
