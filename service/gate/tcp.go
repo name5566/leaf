@@ -1,55 +1,82 @@
 package gate
 
 import (
+	"github.com/name5566/leaf/log"
 	"net"
+	"sync"
 )
 
-const (
-	name    = "tcpgate"
-	defAddr = ":8080"
-)
+// you must implement this interface
+type TcpGateExtension interface {
+}
 
 type TcpGate struct {
-	Addr string
-	ln   net.Listener
+	ext        TcpGateExtension
+	ln         net.Listener
+	maxConnNum int
+	conns      map[net.Conn]*ConnContext
+	lConns     sync.RWMutex
 }
 
-func NewTcpGate() (*TcpGate, error) {
-
+type ConnContext struct {
 }
 
-func (tcpGate *TcpGate) Name() string {
-	return name
+func NewTcpGate(ext TcpGateExtension, laddr string, maxConnNum int) (*TcpGate, error) {
+	ln, err := net.Listen("tcp", laddr)
+	if err != nil {
+		return nil, err
+	}
+
+	tcpGate := new(TcpGate)
+	tcpGate.ext = ext
+	tcpGate.ln = ln
+	tcpGate.maxConnNum = maxConnNum
+	return tcpGate, nil
 }
 
 func (tcpGate *TcpGate) Start() {
-	if tcpGate.Addr == "" {
-		tcpGate.Addr = defAddr
-	}
+	go func() {
+		for {
+			// accept conn
+			conn, err := tcpGate.ln.Accept()
+			if err != nil {
+				if err.Error() == "use of closed network connection" {
+					log.Release("tcp gate closed")
+					return
+				} else {
+					log.Error("accept error: %v", err)
+					continue
+				}
+			}
 
-	ln, err := net.Listen("tcp", tcpGate.Addr)
-	if err != nil {
-		panic(err)
-	}
-	tcpGate.ln = ln
-
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			if err.Error() == "use of closed network connection" {
-				break
-			} else {
+			// conns
+			tcpGate.lConns.Lock()
+			if len(tcpGate.conns) >= tcpGate.maxConnNum {
+				tcpGate.lConns.Unlock()
+				conn.Close()
+				log.Error("too many connections (%v)", tcpGate.maxConnNum)
 				continue
 			}
+			tcpGate.conns[conn] = new(ConnContext)
+			tcpGate.lConns.Unlock()
+
+			// handle conn
+			go tcpGate.handleConn(conn)
 		}
-		go handleConn(conn)
-	}
+	}()
 }
 
 func (tcpGate *TcpGate) Close() {
 	tcpGate.ln.Close()
+
+	tcpGate.lConns.Lock()
+	for conn, _ := range tcpGate.conns {
+		conn.Close()
+	}
+	tcpGate.conns = make(map[net.Conn]*ConnContext)
+	tcpGate.lConns.Unlock()
 }
 
-func handleConn(conn net.Conn) {
+func (tcpGate *TcpGate) handleConn(conn net.Conn) {
 
 }
