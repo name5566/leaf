@@ -81,7 +81,6 @@ func New(strLevel string, pathname string) (*Logger, error) {
 	return logger, nil
 }
 
-// multi-goroutine unsafe
 // It's dangerous to call the method on logging
 func (logger *Logger) Close() {
 	if logger.baseFile {
@@ -126,7 +125,6 @@ func (logger *Logger) Fatal(format string, a ...interface{}) {
 
 var gLogger *Logger
 
-// multi-goroutine unsafe
 // It's dangerous to call the method on logging
 func Export(logger *Logger) {
 	gLogger = logger
