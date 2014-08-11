@@ -6,10 +6,12 @@ import (
 	"sync"
 )
 
+type ConnSet map[net.Conn]struct{}
+
 type TcpGate struct {
 	ln         net.Listener
 	maxConnNum int
-	conns      map[net.Conn]struct{}
+	conns      ConnSet
 	mutexConns sync.Mutex
 	agentMgr   AgentMgr
 }
@@ -23,6 +25,7 @@ func NewTcpGate(laddr string, maxConnNum int, agentMgr AgentMgr) (*TcpGate, erro
 	tcpGate := new(TcpGate)
 	tcpGate.ln = ln
 	tcpGate.maxConnNum = maxConnNum
+	tcpGate.conns = make(ConnSet)
 	tcpGate.agentMgr = agentMgr
 	return tcpGate, nil
 }
@@ -66,7 +69,7 @@ func (tcpGate *TcpGate) Close() {
 	for conn, _ := range tcpGate.conns {
 		conn.Close()
 	}
-	tcpGate.conns = make(map[net.Conn]struct{})
+	tcpGate.conns = make(ConnSet)
 	tcpGate.mutexConns.Unlock()
 }
 
