@@ -6,31 +6,24 @@ import (
 	"sync"
 )
 
-// you must implement this interface
-type TcpGateExtension interface {
-}
-
 type TcpGate struct {
-	ext        TcpGateExtension
 	ln         net.Listener
 	maxConnNum int
-	conns      map[net.Conn]*ConnContext
-	lConns     sync.RWMutex
+	conns      map[net.Conn]struct{}
+	mutexConns sync.Mutex
+	agentMgr   AgentMgr
 }
 
-type ConnContext struct {
-}
-
-func NewTcpGate(ext TcpGateExtension, laddr string, maxConnNum int) (*TcpGate, error) {
+func NewTcpGate(laddr string, maxConnNum int, agentMgr AgentMgr) (*TcpGate, error) {
 	ln, err := net.Listen("tcp", laddr)
 	if err != nil {
 		return nil, err
 	}
 
 	tcpGate := new(TcpGate)
-	tcpGate.ext = ext
 	tcpGate.ln = ln
 	tcpGate.maxConnNum = maxConnNum
+	tcpGate.agentMgr = agentMgr
 	return tcpGate, nil
 }
 
@@ -50,15 +43,15 @@ func (tcpGate *TcpGate) Start() {
 			}
 
 			// conns
-			tcpGate.lConns.Lock()
+			tcpGate.mutexConns.Lock()
 			if len(tcpGate.conns) >= tcpGate.maxConnNum {
-				tcpGate.lConns.Unlock()
+				tcpGate.mutexConns.Unlock()
 				conn.Close()
-				log.Error("too many connections (%v)", tcpGate.maxConnNum)
+				log.Error("too many connections")
 				continue
 			}
-			tcpGate.conns[conn] = new(ConnContext)
-			tcpGate.lConns.Unlock()
+			tcpGate.conns[conn] = struct{}{}
+			tcpGate.mutexConns.Unlock()
 
 			// handle conn
 			go tcpGate.handleConn(conn)
@@ -69,14 +62,21 @@ func (tcpGate *TcpGate) Start() {
 func (tcpGate *TcpGate) Close() {
 	tcpGate.ln.Close()
 
-	tcpGate.lConns.Lock()
+	tcpGate.mutexConns.Lock()
 	for conn, _ := range tcpGate.conns {
 		conn.Close()
 	}
-	tcpGate.conns = make(map[net.Conn]*ConnContext)
-	tcpGate.lConns.Unlock()
+	tcpGate.conns = make(map[net.Conn]struct{})
+	tcpGate.mutexConns.Unlock()
 }
 
 func (tcpGate *TcpGate) handleConn(conn net.Conn) {
+	agent := tcpGate.agentMgr.NewAgent()
+	agent.Main(conn)
 
+	conn.Close()
+
+	tcpGate.mutexConns.Lock()
+	delete(tcpGate.conns, conn)
+	tcpGate.mutexConns.Unlock()
 }
