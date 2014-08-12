@@ -14,6 +14,7 @@ type TcpGate struct {
 	conns      ConnSet
 	mutexConns sync.Mutex
 	agentMgr   AgentMgr
+	wg         sync.WaitGroup
 }
 
 func NewTcpGate(laddr string, maxConnNum int, agentMgr AgentMgr) (*TcpGate, error) {
@@ -57,6 +58,7 @@ func (tcpGate *TcpGate) Start() {
 			tcpGate.mutexConns.Unlock()
 
 			// handle conn
+			tcpGate.wg.Add(1)
 			go tcpGate.handleConn(conn)
 		}
 	}()
@@ -71,6 +73,8 @@ func (tcpGate *TcpGate) Close() {
 	}
 	tcpGate.conns = make(ConnSet)
 	tcpGate.mutexConns.Unlock()
+
+	tcpGate.wg.Wait()
 }
 
 func (tcpGate *TcpGate) handleConn(conn net.Conn) {
@@ -78,8 +82,9 @@ func (tcpGate *TcpGate) handleConn(conn net.Conn) {
 	agent.Main(conn)
 
 	conn.Close()
-
 	tcpGate.mutexConns.Lock()
 	delete(tcpGate.conns, conn)
 	tcpGate.mutexConns.Unlock()
+
+	tcpGate.wg.Done()
 }
