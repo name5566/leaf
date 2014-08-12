@@ -1,6 +1,7 @@
 package gate
 
 import (
+	"errors"
 	"github.com/name5566/leaf/log"
 	"net"
 	"sync"
@@ -21,6 +22,9 @@ func NewTcpGate(laddr string, maxConnNum int, agentMgr AgentMgr) (*TcpGate, erro
 	ln, err := net.Listen("tcp", laddr)
 	if err != nil {
 		return nil, err
+	}
+	if agentMgr == nil {
+		return nil, errors.New("agentMgr must not be nil")
 	}
 
 	tcpGate := new(TcpGate)
