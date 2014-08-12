@@ -16,6 +16,7 @@ type TcpGate struct {
 	mutexConns sync.Mutex
 	agentMgr   AgentMgr
 	wg         sync.WaitGroup
+	running    bool
 }
 
 func NewTcpGate(laddr string, maxConnNum int, agentMgr AgentMgr) (*TcpGate, error) {
@@ -32,6 +33,7 @@ func NewTcpGate(laddr string, maxConnNum int, agentMgr AgentMgr) (*TcpGate, erro
 	tcpGate.maxConnNum = maxConnNum
 	tcpGate.conns = make(ConnSet)
 	tcpGate.agentMgr = agentMgr
+	tcpGate.running = true
 	return tcpGate, nil
 }
 
@@ -41,7 +43,7 @@ func (tcpGate *TcpGate) Start() {
 			// accept conn
 			conn, err := tcpGate.ln.Accept()
 			if err != nil {
-				if err.Error() == "use of closed network connection" {
+				if !tcpGate.running {
 					log.Release("tcp gate closed")
 					return
 				} else {
@@ -69,6 +71,7 @@ func (tcpGate *TcpGate) Start() {
 }
 
 func (tcpGate *TcpGate) Close() {
+	tcpGate.running = false
 	tcpGate.ln.Close()
 
 	tcpGate.mutexConns.Lock()
