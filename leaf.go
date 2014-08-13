@@ -7,37 +7,48 @@ import (
 	"os/signal"
 )
 
-type Config struct {
-	LogLevel       string
-	LogPath        string
-	GateAddr       string
-	GateMaxConnNum int
-	GateAgentMgr   gate.AgentMgr
+type Cfg struct {
+	LogLevel    string
+	LogPath     string
+	tcpGateCfg  *gate.TcpGateCfg
+	httpGateCfg *gate.HttpGateCfg
 }
 
-func Run(cfg Config) {
+func Run(cfg Cfg) {
 	// log
-	logger, err := log.New(cfg.LogLevel, cfg.LogPath)
-	if err != nil {
-		panic(err)
+	if cfg.LogLevel != "" {
+		logger, err := log.New(cfg.LogLevel, cfg.LogPath)
+		if err != nil {
+			panic(err)
+		}
+		log.Export(logger)
+		defer logger.Close()
 	}
-	log.Export(logger)
-	defer log.Close()
 
 	log.Release("Leaf server starting up")
 
 	// gate
-	gate, err := gate.NewTcpGate(cfg.GateAddr, cfg.GateMaxConnNum, cfg.GateAgentMgr)
-	if err != nil {
-		log.Fatal("%v", err)
+	if cfg.tcpGateCfg != nil {
+		gate, err := gate.NewTcpGate(cfg.tcpGateCfg)
+		if err != nil {
+			log.Fatal("%v", err)
+		}
+		gate.Start()
+		defer gate.Close()
+	} else if cfg.httpGateCfg != nil {
+		gate, err := gate.NewHttpGate(cfg.httpGateCfg)
+		if err != nil {
+			log.Fatal("%v", err)
+		}
+		gate.Start()
+		defer gate.Close()
+	} else {
+		log.Fatal("gate config not found")
 	}
-	gate.Start()
 
 	// close
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
 	log.Release("Leaf server closing down (signal: %v)", sig)
-
-	gate.Close()
 }
