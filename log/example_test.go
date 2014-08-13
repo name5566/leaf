@@ -5,19 +5,24 @@ import (
 )
 
 func Example() {
+	name := "Leaf"
+
+	log.Debug("My name is %v", name)
+	log.Release("My name is %v", name)
+	log.Error("My name is %v", name)
+	// log.Fatal("My name is %v", name)
+
 	logger, err := log.New("release", "")
 	if err != nil {
 		return
 	}
+	defer logger.Close()
 
 	logger.Debug("will not print")
-	logger.Release("My name is %v", "Leaf")
+	logger.Release("My name is %v", name)
 
 	log.Export(logger)
 
 	log.Debug("will not print")
-	log.Release("123")
-	log.Error("456")
-	log.Fatal("789")
-	log.Close()
+	log.Release("My name is %v", name)
 }

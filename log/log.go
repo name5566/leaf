@@ -123,11 +123,13 @@ func (logger *Logger) Fatal(format string, a ...interface{}) {
 	logger.doPrintf(fatalLevel, printFatalLevel, format, a...)
 }
 
-var gLogger *Logger
+var gLogger, _ = New("debug", "")
 
 // It's dangerous to call the method on logging
 func Export(logger *Logger) {
-	gLogger = logger
+	if logger != nil {
+		gLogger = logger
+	}
 }
 
 func Debug(format string, a ...interface{}) {
