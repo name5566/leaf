@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type TcpGateCfg struct {
+type TcpGateConfig struct {
 	Addr       string
 	MaxConnNum int
 	AgentMgr   AgentMgr
@@ -25,24 +25,24 @@ type TcpGate struct {
 	running    bool
 }
 
-func NewTcpGate(cfg *TcpGateCfg) (*TcpGate, error) {
-	if cfg == nil {
-		return nil, errors.New("cfg must not be nil")
+func NewTcpGate(config *TcpGateConfig) (*TcpGate, error) {
+	if config == nil {
+		return nil, errors.New("config must not be nil")
 	}
-	if cfg.AgentMgr == nil {
+	if config.AgentMgr == nil {
 		return nil, errors.New("AgentMgr must not be nil")
 	}
 
-	ln, err := net.Listen("tcp", cfg.Addr)
+	ln, err := net.Listen("tcp", config.Addr)
 	if err != nil {
 		return nil, err
 	}
 
 	tcpGate := new(TcpGate)
 	tcpGate.ln = ln
-	tcpGate.maxConnNum = cfg.MaxConnNum
+	tcpGate.maxConnNum = config.MaxConnNum
 	tcpGate.conns = make(ConnSet)
-	tcpGate.agentMgr = cfg.AgentMgr
+	tcpGate.agentMgr = config.AgentMgr
 	tcpGate.running = true
 	return tcpGate, nil
 }

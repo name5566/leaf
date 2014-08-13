@@ -4,13 +4,13 @@ import (
 	"errors"
 )
 
-type HttpGateCfg struct {
+type HttpGateConfig struct {
 }
 
 type HttpGate struct {
 }
 
-func NewHttpGate(cfg *HttpGateCfg) (*HttpGate, error) {
+func NewHttpGate(config *HttpGateConfig) (*HttpGate, error) {
 	return nil, errors.New("not implemented")
 }
 

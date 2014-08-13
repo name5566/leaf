@@ -7,17 +7,17 @@ import (
 	"os/signal"
 )
 
-type Cfg struct {
-	LogLevel    string
-	LogPath     string
-	TcpGateCfg  *gate.TcpGateCfg
-	HttpGateCfg *gate.HttpGateCfg
+type Config struct {
+	LogLevel       string
+	LogPath        string
+	TcpGateConfig  *gate.TcpGateConfig
+	HttpGateConfig *gate.HttpGateConfig
 }
 
-func Run(cfg Cfg) {
+func Run(config Config) {
 	// log
-	if cfg.LogLevel != "" {
-		logger, err := log.New(cfg.LogLevel, cfg.LogPath)
+	if config.LogLevel != "" {
+		logger, err := log.New(config.LogLevel, config.LogPath)
 		if err != nil {
 			panic(err)
 		}
@@ -28,15 +28,15 @@ func Run(cfg Cfg) {
 	log.Release("Leaf server starting up")
 
 	// gate
-	if cfg.TcpGateCfg != nil {
-		gate, err := gate.NewTcpGate(cfg.TcpGateCfg)
+	if config.TcpGateConfig != nil {
+		gate, err := gate.NewTcpGate(config.TcpGateConfig)
 		if err != nil {
 			log.Fatal("%v", err)
 		}
 		gate.Start()
 		defer gate.Close()
-	} else if cfg.HttpGateCfg != nil {
-		gate, err := gate.NewHttpGate(cfg.HttpGateCfg)
+	} else if config.HttpGateConfig != nil {
+		gate, err := gate.NewHttpGate(config.HttpGateConfig)
 		if err != nil {
 			log.Fatal("%v", err)
 		}
