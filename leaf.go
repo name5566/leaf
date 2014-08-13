@@ -10,8 +10,8 @@ import (
 type Cfg struct {
 	LogLevel    string
 	LogPath     string
-	tcpGateCfg  *gate.TcpGateCfg
-	httpGateCfg *gate.HttpGateCfg
+	TcpGateCfg  *gate.TcpGateCfg
+	HttpGateCfg *gate.HttpGateCfg
 }
 
 func Run(cfg Cfg) {
@@ -28,15 +28,15 @@ func Run(cfg Cfg) {
 	log.Release("Leaf server starting up")
 
 	// gate
-	if cfg.tcpGateCfg != nil {
-		gate, err := gate.NewTcpGate(cfg.tcpGateCfg)
+	if cfg.TcpGateCfg != nil {
+		gate, err := gate.NewTcpGate(cfg.TcpGateCfg)
 		if err != nil {
 			log.Fatal("%v", err)
 		}
 		gate.Start()
 		defer gate.Close()
-	} else if cfg.httpGateCfg != nil {
-		gate, err := gate.NewHttpGate(cfg.httpGateCfg)
+	} else if cfg.HttpGateCfg != nil {
+		gate, err := gate.NewHttpGate(cfg.HttpGateCfg)
 		if err != nil {
 			log.Fatal("%v", err)
 		}

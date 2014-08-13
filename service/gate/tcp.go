@@ -8,9 +8,9 @@ import (
 )
 
 type TcpGateCfg struct {
-	addr       string
-	maxConnNum int
-	agentMgr   AgentMgr
+	Addr       string
+	MaxConnNum int
+	AgentMgr   AgentMgr
 }
 
 type ConnSet map[net.Conn]struct{}
@@ -29,20 +29,20 @@ func NewTcpGate(cfg *TcpGateCfg) (*TcpGate, error) {
 	if cfg == nil {
 		return nil, errors.New("cfg must not be nil")
 	}
-	if cfg.agentMgr == nil {
-		return nil, errors.New("agentMgr must not be nil")
+	if cfg.AgentMgr == nil {
+		return nil, errors.New("AgentMgr must not be nil")
 	}
 
-	ln, err := net.Listen("tcp", cfg.addr)
+	ln, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {
 		return nil, err
 	}
 
 	tcpGate := new(TcpGate)
 	tcpGate.ln = ln
-	tcpGate.maxConnNum = cfg.maxConnNum
+	tcpGate.maxConnNum = cfg.MaxConnNum
 	tcpGate.conns = make(ConnSet)
-	tcpGate.agentMgr = cfg.agentMgr
+	tcpGate.agentMgr = cfg.AgentMgr
 	tcpGate.running = true
 	return tcpGate, nil
 }
