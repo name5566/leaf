@@ -2,19 +2,18 @@ package leaf
 
 import (
 	"github.com/name5566/leaf/log"
-	"github.com/name5566/leaf/service/gate"
+	"github.com/name5566/leaf/server"
 	"os"
 	"os/signal"
 )
 
 type Config struct {
-	LogLevel       string
-	LogPath        string
-	TcpGateConfig  *gate.TcpGateConfig
-	HttpGateConfig *gate.HttpGateConfig
+	LogLevel string
+	LogPath  string
+	Servers  []server.Server
 }
 
-func Run(config Config) {
+func Run(config *Config) {
 	// log
 	if config.LogLevel != "" {
 		logger, err := log.New(config.LogLevel, config.LogPath)
@@ -27,23 +26,10 @@ func Run(config Config) {
 
 	log.Release("Leaf server starting up")
 
-	// gate
-	if config.TcpGateConfig != nil {
-		gate, err := gate.NewTcpGate(config.TcpGateConfig)
-		if err != nil {
-			log.Fatal("%v", err)
-		}
-		gate.Start()
-		defer gate.Close()
-	} else if config.HttpGateConfig != nil {
-		gate, err := gate.NewHttpGate(config.HttpGateConfig)
-		if err != nil {
-			log.Fatal("%v", err)
-		}
-		gate.Start()
-		defer gate.Close()
-	} else {
-		log.Fatal("gate config not found")
+	// servers
+	for _, s := range config.Servers {
+		s.Start()
+		defer s.Close()
 	}
 
 	// close
