@@ -15,7 +15,7 @@ type Server struct {
 	mutexConns   sync.Mutex
 	wg           sync.WaitGroup
 	closeFlag    bool
-	dispatcher   *MsgDispatcher
+	dispatcher   MsgDispatcher
 }
 
 type ConnSet map[net.Conn]struct{}
@@ -37,9 +37,6 @@ func (server *Server) init() {
 	}
 	if server.NewMsgReader == nil {
 		log.Fatal("NewMsgReader must not be nil")
-	}
-	if server.dispatcher == nil {
-		log.Fatal("dispatcher must not be nil")
 	}
 
 	server.ln = ln
@@ -76,7 +73,7 @@ func (server *Server) run() {
 
 func (server *Server) handle(baseConn net.Conn) {
 	conn := Conn{baseConn}
-	conn.Run(server.NewMsgReader(), server.dispatcher)
+	conn.Run(server.NewMsgReader(), &server.dispatcher)
 
 	baseConn.Close()
 	server.mutexConns.Lock()
