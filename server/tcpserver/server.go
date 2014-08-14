@@ -7,13 +7,15 @@ import (
 )
 
 type Server struct {
-	Addr       string
-	MaxConnNum int
-	ln         net.Listener
-	conns      ConnSet
-	mutexConns sync.Mutex
-	wg         sync.WaitGroup
-	closeFlag  bool
+	Addr         string
+	MaxConnNum   int
+	NewMsgParser func() MsgParser
+	ln           net.Listener
+	conns        ConnSet
+	mutexConns   sync.Mutex
+	wg           sync.WaitGroup
+	closeFlag    bool
+	dispatcher   MsgDispatcher
 }
 
 type ConnSet map[net.Conn]struct{}
@@ -53,7 +55,7 @@ func (server *Server) run() {
 		if len(server.conns) >= server.MaxConnNum {
 			server.mutexConns.Unlock()
 			conn.Close()
-			log.Error("too many connections")
+			log.Debug("too many connections")
 			continue
 		}
 		server.conns[conn] = struct{}{}
@@ -65,8 +67,12 @@ func (server *Server) run() {
 }
 
 func (server *Server) handle(conn net.Conn) {
-	c := Conn{conn}
-	c.Run()
+	agent := Agent{
+		conn,
+		server.NewMsgParser(),
+		&server.dispatcher,
+	}
+	agent.Run()
 
 	conn.Close()
 	server.mutexConns.Lock()
@@ -88,4 +94,8 @@ func (server *Server) Close() {
 	server.mutexConns.Unlock()
 
 	server.wg.Wait()
+}
+
+func (server *Server) HandleFunc(id interface{}, handler Handler) {
+	server.dispatcher.HandleFunc(id, handler)
 }
