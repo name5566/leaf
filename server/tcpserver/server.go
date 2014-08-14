@@ -9,13 +9,13 @@ import (
 type Server struct {
 	Addr         string
 	MaxConnNum   int
-	NewMsgParser func() MsgParser
+	NewMsgReader func() MsgReader
 	ln           net.Listener
 	conns        ConnSet
 	mutexConns   sync.Mutex
 	wg           sync.WaitGroup
 	closeFlag    bool
-	dispatcher   MsgDispatcher
+	dispatcher   *MsgDispatcher
 }
 
 type ConnSet map[net.Conn]struct{}
@@ -33,7 +33,15 @@ func (server *Server) init() {
 
 	if server.MaxConnNum <= 0 {
 		server.MaxConnNum = 100
+		log.Release("invalid MaxConnNum, reset to %v", server.MaxConnNum)
 	}
+	if server.NewMsgReader == nil {
+		log.Fatal("NewMsgReader must not be nil")
+	}
+	if server.dispatcher == nil {
+		log.Fatal("dispatcher must not be nil")
+	}
+
 	server.ln = ln
 	server.conns = make(ConnSet)
 	server.closeFlag = false
@@ -66,17 +74,13 @@ func (server *Server) run() {
 	}
 }
 
-func (server *Server) handle(conn net.Conn) {
-	agent := Agent{
-		conn,
-		server.NewMsgParser(),
-		&server.dispatcher,
-	}
-	agent.Run()
+func (server *Server) handle(baseConn net.Conn) {
+	conn := Conn{baseConn}
+	conn.Run(server.NewMsgReader(), server.dispatcher)
 
-	conn.Close()
+	baseConn.Close()
 	server.mutexConns.Lock()
-	delete(server.conns, conn)
+	delete(server.conns, baseConn)
 	server.mutexConns.Unlock()
 
 	server.wg.Done()
@@ -96,6 +100,6 @@ func (server *Server) Close() {
 	server.wg.Wait()
 }
 
-func (server *Server) HandleFunc(id interface{}, handler Handler) {
-	server.dispatcher.HandleFunc(id, handler)
+func (server *Server) RegHandler(id interface{}, handler Handler) {
+	server.dispatcher.RegHandler(id, handler)
 }

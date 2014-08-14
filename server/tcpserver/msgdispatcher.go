@@ -7,12 +7,13 @@ import (
 
 type MsgDispatcher struct {
 	sync.RWMutex
+	// id -> handler
 	handlers map[interface{}]Handler
 }
 
-type Handler func(agent *Agent, msg interface{})
+type Handler func(conn *Conn, msg interface{})
 
-func (dispatcher *MsgDispatcher) HandleFunc(id interface{}, handler Handler) {
+func (dispatcher *MsgDispatcher) RegHandler(id interface{}, handler Handler) {
 	dispatcher.Lock()
 	defer dispatcher.Unlock()
 
@@ -20,7 +21,8 @@ func (dispatcher *MsgDispatcher) HandleFunc(id interface{}, handler Handler) {
 		dispatcher.handlers = make(map[interface{}]Handler)
 	}
 	if dispatcher.handlers[id] != nil {
-		log.Error("handler %v already exists", id)
+		// TODO: file and line
+		log.Error("handler %v already registered", id)
 		return
 	}
 	dispatcher.handlers[id] = handler
