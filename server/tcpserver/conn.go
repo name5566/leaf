@@ -8,7 +8,7 @@ type Conn struct {
 	baseConn net.Conn
 }
 
-func (conn *Conn) Run(reader MsgReader, dispatcher *MsgDispatcher) {
+func (conn *Conn) Run(reader MsgReader, disp *Dispatcher) {
 	for {
 		// read
 		id, msg, err := reader.Read(conn.baseConn)
@@ -17,7 +17,7 @@ func (conn *Conn) Run(reader MsgReader, dispatcher *MsgDispatcher) {
 		}
 
 		// dispatcher
-		handler := dispatcher.Handler(id)
+		handler := disp.Handler(id)
 		if handler == nil {
 			break
 		}

@@ -15,7 +15,7 @@ type Server struct {
 	mutexConns   sync.Mutex
 	wg           sync.WaitGroup
 	closeFlag    bool
-	dispatcher   MsgDispatcher
+	disp         Dispatcher
 }
 
 type ConnSet map[net.Conn]struct{}
@@ -73,7 +73,7 @@ func (server *Server) run() {
 
 func (server *Server) handle(baseConn net.Conn) {
 	conn := Conn{baseConn}
-	conn.Run(server.NewMsgReader(), &server.dispatcher)
+	conn.Run(server.NewMsgReader(), &server.disp)
 
 	baseConn.Close()
 	server.mutexConns.Lock()
@@ -98,5 +98,5 @@ func (server *Server) Close() {
 }
 
 func (server *Server) RegHandler(id interface{}, handler Handler) {
-	server.dispatcher.RegHandler(id, handler)
+	server.disp.RegHandler(id, handler)
 }
