@@ -7,15 +7,15 @@ import (
 )
 
 type Server struct {
-	Addr         string
-	MaxConnNum   int
-	NewMsgReader func() MsgReader
-	ln           net.Listener
-	conns        ConnSet
-	mutexConns   sync.Mutex
-	wg           sync.WaitGroup
-	closeFlag    bool
-	disp         Dispatcher
+	Addr       string
+	MaxConnNum int
+	NewConn    func(net.Conn) Conn
+	ln         net.Listener
+	conns      ConnSet
+	mutexConns sync.Mutex
+	wg         sync.WaitGroup
+	closeFlag  bool
+	disp       Dispatcher
 }
 
 type ConnSet map[net.Conn]struct{}
@@ -35,8 +35,8 @@ func (server *Server) init() {
 		server.MaxConnNum = 100
 		log.Release("invalid MaxConnNum, reset to %v", server.MaxConnNum)
 	}
-	if server.NewMsgReader == nil {
-		log.Fatal("NewMsgReader must not be nil")
+	if server.NewConn == nil {
+		log.Fatal("NewConn must not be nil")
 	}
 
 	server.ln = ln
@@ -67,14 +67,26 @@ func (server *Server) run() {
 		server.mutexConns.Unlock()
 
 		server.wg.Add(1)
-		go server.handle(conn)
+		go server.handle(server.NewConn(conn), conn)
 	}
 }
 
-func (server *Server) handle(baseConn net.Conn) {
-	conn := Conn{baseConn}
-	conn.Run(server.NewMsgReader(), &server.disp)
+func (server *Server) handle(conn Conn, baseConn net.Conn) {
+	// handle
+	for {
+		id, msg, err := conn.Read()
+		if err != nil {
+			break
+		}
 
+		handler := server.disp.Handler(id)
+		if handler == nil {
+			break
+		}
+		handler(conn, msg)
+	}
+
+	// cleanup
 	baseConn.Close()
 	server.mutexConns.Lock()
 	delete(server.conns, baseConn)
