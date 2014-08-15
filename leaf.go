@@ -7,16 +7,16 @@ import (
 	"os/signal"
 )
 
-type Config struct {
-	LogLevel string
-	LogPath  string
-	Servers  []server.Server
+var servers []server.Server
+
+func RegServer(server server.Server) {
+	servers = append(servers, server)
 }
 
-func Run(config *Config) {
+func Run(logLevel string, logPath string) {
 	// log
-	if config.LogLevel != "" {
-		logger, err := log.New(config.LogLevel, config.LogPath)
+	if logLevel != "" {
+		logger, err := log.New(logLevel, logPath)
 		if err != nil {
 			panic(err)
 		}
@@ -24,10 +24,13 @@ func Run(config *Config) {
 		defer logger.Close()
 	}
 
-	log.Release("Leaf server starting up")
+	log.Release("Leaf starting up")
 
 	// servers
-	for _, s := range config.Servers {
+	if len(servers) == 0 {
+		log.Fatal("server not found (call leaf.RegServer first)")
+	}
+	for _, s := range servers {
 		s.Start()
 		defer s.Close()
 	}
@@ -36,5 +39,5 @@ func Run(config *Config) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	log.Release("Leaf server closing down (signal: %v)", sig)
+	log.Release("Leaf closing down (signal: %v)", sig)
 }
