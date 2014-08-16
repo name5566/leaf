@@ -11,7 +11,7 @@ type Dispatcher struct {
 	handlers map[interface{}]Handler
 }
 
-type Handler func(conn Conn, msg interface{})
+type Handler func(agent Agent, msg interface{})
 
 func (disp *Dispatcher) RegHandler(id interface{}, handler Handler) {
 	disp.Lock()

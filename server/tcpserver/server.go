@@ -7,15 +7,16 @@ import (
 )
 
 type Server struct {
-	Addr       string
-	MaxConnNum int
-	NewConn    func(net.Conn) Conn
-	ln         net.Listener
-	conns      ConnSet
-	mutexConns sync.Mutex
-	wg         sync.WaitGroup
-	closeFlag  bool
-	disp       Dispatcher
+	Addr            string
+	MaxConnNum      int
+	PendingWriteNum int
+	NewAgent        func(*Conn) Agent
+	ln              net.Listener
+	conns           ConnSet
+	mutexConns      sync.Mutex
+	wg              sync.WaitGroup
+	closeFlag       bool
+	disp            Dispatcher
 }
 
 type ConnSet map[net.Conn]struct{}
@@ -35,8 +36,12 @@ func (server *Server) init() {
 		server.MaxConnNum = 100
 		log.Release("invalid MaxConnNum, reset to %v", server.MaxConnNum)
 	}
-	if server.NewConn == nil {
-		log.Fatal("NewConn must not be nil")
+	if server.PendingWriteNum <= 0 {
+		server.PendingWriteNum = 100
+		log.Release("invalid PendingWriteNum, reset to %v", server.PendingWriteNum)
+	}
+	if server.NewAgent == nil {
+		log.Fatal("NewAgent must not be nil")
 	}
 
 	server.ln = ln
@@ -67,14 +72,27 @@ func (server *Server) run() {
 		server.mutexConns.Unlock()
 
 		server.wg.Add(1)
-		go server.handle(server.NewConn(conn), conn)
+
+		// net conn wrapper
+		c := NewConn(conn, server.PendingWriteNum)
+		agent := server.NewAgent(c)
+		go func() {
+			server.handle(agent)
+
+			// cleanup
+			c.Close()
+			server.mutexConns.Lock()
+			delete(server.conns, conn)
+			server.mutexConns.Unlock()
+
+			server.wg.Done()
+		}()
 	}
 }
 
-func (server *Server) handle(conn Conn, baseConn net.Conn) {
-	// handle
+func (server *Server) handle(agent Agent) {
 	for {
-		id, msg, err := conn.Read()
+		id, msg, err := agent.Read()
 		if err != nil {
 			break
 		}
@@ -83,16 +101,8 @@ func (server *Server) handle(conn Conn, baseConn net.Conn) {
 		if handler == nil {
 			break
 		}
-		handler(conn, msg)
+		handler(agent, msg)
 	}
-
-	// cleanup
-	baseConn.Close()
-	server.mutexConns.Lock()
-	delete(server.conns, baseConn)
-	server.mutexConns.Unlock()
-
-	server.wg.Done()
 }
 
 func (server *Server) Close() {
