@@ -48,6 +48,7 @@ func (conn *Conn) Close() {
 	conn.doClose()
 }
 
+// b must not be modified by other goroutines
 func (conn *Conn) Write(b []byte) {
 	conn.Lock()
 	defer conn.Unlock()
