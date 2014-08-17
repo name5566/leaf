@@ -103,6 +103,8 @@ func (server *Server) handle(agent Agent) {
 		}
 		handler(agent, msg)
 	}
+
+	agent.OnClose()
 }
 
 func (server *Server) Close() {

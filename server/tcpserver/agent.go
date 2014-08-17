@@ -9,4 +9,6 @@ type Agent interface {
 		// err
 		error,
 	)
+
+	OnClose()
 }
