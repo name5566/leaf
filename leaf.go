@@ -2,14 +2,14 @@ package leaf
 
 import (
 	"github.com/name5566/leaf/log"
-	"github.com/name5566/leaf/server"
+	"github.com/name5566/leaf/network"
 	"os"
 	"os/signal"
 )
 
-var servers []server.Server
+var servers []network.Server
 
-func RegServer(server server.Server) {
+func RegServer(server network.Server) {
 	servers = append(servers, server)
 }
 

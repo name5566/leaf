@@ -1,4 +1,4 @@
-package tcpserver
+package network
 
 import (
 	"github.com/name5566/leaf/log"
@@ -6,11 +6,11 @@ import (
 	"sync"
 )
 
-type Server struct {
+type TCPServer struct {
 	Addr            string
 	MaxConnNum      int
 	PendingWriteNum int
-	NewAgent        func(*Conn) Agent
+	NewAgent        func(*TCPConn) Agent
 	ln              net.Listener
 	conns           ConnSet
 	mutexConns      sync.Mutex
@@ -21,12 +21,12 @@ type Server struct {
 
 type ConnSet map[net.Conn]struct{}
 
-func (server *Server) Start() {
+func (server *TCPServer) Start() {
 	server.init()
 	go server.run()
 }
 
-func (server *Server) init() {
+func (server *TCPServer) init() {
 	ln, err := net.Listen("tcp", server.Addr)
 	if err != nil {
 		log.Fatal("%v", err)
@@ -49,7 +49,7 @@ func (server *Server) init() {
 	server.closeFlag = false
 }
 
-func (server *Server) run() {
+func (server *TCPServer) run() {
 	for {
 		conn, err := server.ln.Accept()
 		if err != nil {
@@ -73,14 +73,13 @@ func (server *Server) run() {
 
 		server.wg.Add(1)
 
-		// net conn wrapper
-		c := NewConn(conn, server.PendingWriteNum)
-		agent := server.NewAgent(c)
+		tcpConn := NewTCPConn(conn, server.PendingWriteNum)
+		agent := server.NewAgent(tcpConn)
 		go func() {
 			server.handle(agent)
 
 			// cleanup
-			c.Close()
+			tcpConn.Close()
 			server.mutexConns.Lock()
 			delete(server.conns, conn)
 			server.mutexConns.Unlock()
@@ -90,7 +89,7 @@ func (server *Server) run() {
 	}
 }
 
-func (server *Server) handle(agent Agent) {
+func (server *TCPServer) handle(agent Agent) {
 	for {
 		id, msg, err := agent.Read()
 		if err != nil {
@@ -107,7 +106,7 @@ func (server *Server) handle(agent Agent) {
 	agent.OnClose()
 }
 
-func (server *Server) Close() {
+func (server *TCPServer) Close() {
 	server.closeFlag = true
 	server.ln.Close()
 
@@ -121,6 +120,6 @@ func (server *Server) Close() {
 	server.wg.Wait()
 }
 
-func (server *Server) RegHandler(id interface{}, handler Handler) {
+func (server *TCPServer) RegHandler(id interface{}, handler Handler) {
 	server.disp.RegHandler(id, handler)
 }

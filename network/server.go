@@ -1,4 +1,4 @@
-package server
+package network
 
 type Server interface {
 	Start()

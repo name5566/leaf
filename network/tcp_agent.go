@@ -1,4 +1,4 @@
-package tcpserver
+package network
 
 type Agent interface {
 	Read() (
