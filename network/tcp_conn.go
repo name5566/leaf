@@ -20,49 +20,72 @@ func NewTCPConn(conn net.Conn, pendingWriteNum int) *TCPConn {
 
 	go func() {
 		for b := range tcpConn.writeChan {
+			if b == nil {
+				break
+			}
+
 			_, err := conn.Write(b)
 			if err != nil {
-				tcpConn.Close()
 				break
 			}
 		}
+
+		conn.Close()
+		tcpConn.Lock()
+		tcpConn.closeFlag = true
+		tcpConn.Unlock()
 	}()
 
 	return tcpConn
 }
 
-func (tcpConn *TCPConn) doClose() {
+func (tcpConn *TCPConn) doDestroy() {
+	tcpConn.conn.(*net.TCPConn).SetLinger(0)
 	tcpConn.conn.Close()
 	close(tcpConn.writeChan)
 	tcpConn.closeFlag = true
 }
 
-func (tcpConn *TCPConn) Close() {
+func (tcpConn *TCPConn) Destroy() {
 	tcpConn.Lock()
 	defer tcpConn.Unlock()
-
 	if tcpConn.closeFlag {
 		return
 	}
 
-	tcpConn.doClose()
+	tcpConn.doDestroy()
+}
+
+func (tcpConn *TCPConn) Close() {
+	tcpConn.Lock()
+	defer tcpConn.Unlock()
+	if tcpConn.closeFlag {
+		return
+	}
+
+	tcpConn.doWrite(nil)
+	tcpConn.closeFlag = true
+}
+
+func (tcpConn *TCPConn) doWrite(b []byte) {
+	if len(tcpConn.writeChan) == cap(tcpConn.writeChan) {
+		log.Debug("close conn: channel full")
+		tcpConn.doDestroy()
+		return
+	}
+
+	tcpConn.writeChan <- b
 }
 
 // b must not be modified by other goroutines
 func (tcpConn *TCPConn) Write(b []byte) {
 	tcpConn.Lock()
 	defer tcpConn.Unlock()
-
-	if tcpConn.closeFlag {
-		return
-	}
-	if len(tcpConn.writeChan) == cap(tcpConn.writeChan) {
-		log.Debug("close conn: channel full")
-		tcpConn.doClose()
+	if tcpConn.closeFlag || b == nil {
 		return
 	}
 
-	tcpConn.writeChan <- b
+	tcpConn.doWrite(b)
 }
 
 func (tcpConn *TCPConn) CopyAndWrite(b []byte) {
