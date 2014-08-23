@@ -11,9 +11,9 @@ type TCPClient struct {
 	Addr              string
 	ReconnectInterval time.Duration
 	PendingWriteNum   int
-	Agent             Agent
-	conn              net.Conn
+	NewAgent          func(*TCPConn) Agent
 	wg                sync.WaitGroup
+	tcpConn           *TCPConn
 	disp              Dispatcher
 }
 
@@ -31,43 +31,50 @@ func (client *TCPClient) init() {
 		client.PendingWriteNum = 100
 		log.Release("invalid PendingWriteNum, reset to %v", client.PendingWriteNum)
 	}
-	if client.Agent == nil {
-		log.Fatal("Agent must not be nil")
+	if client.NewAgent == nil {
+		log.Fatal("NewAgent must not be nil")
 	}
 
-	for client.conn == nil {
-		conn, err := net.Dial("tcp", client.Addr)
+	var conn net.Conn
+	var err error
+	for conn == nil {
+		conn, err = net.Dial("tcp", client.Addr)
 		if err != nil {
 			time.Sleep(client.ReconnectInterval)
 			log.Release("connect to %v error: %v", client.Addr, err)
 			continue
 		}
-		client.conn = conn
 	}
 
-	tcpConn := NewTCPConn(conn, server.PendingWriteNum)
-	agent := server.NewAgent(tcpConn)
-	go func() {
-		server.handle(agent)
-
-		// cleanup
-		tcpConn.Close()
-		server.mutexConns.Lock()
-		delete(server.conns, conn)
-		server.mutexConns.Unlock()
-
-		server.wg.Done()
-	}()
+	client.wg.Add(1)
+	client.tcpConn = NewTCPConn(conn, client.PendingWriteNum)
 }
 
 func (client *TCPClient) run() {
+	agent := client.NewAgent(client.tcpConn)
 
+	for {
+		id, msg, err := agent.Read()
+		if err != nil {
+			break
+		}
+
+		handler := client.disp.Handler(id)
+		if handler == nil {
+			break
+		}
+		handler(agent, msg)
+	}
+
+	agent.OnClose()
+	client.wg.Done()
 }
 
 func (client *TCPClient) Close() {
-
+	client.tcpConn.Close()
+	client.wg.Wait()
 }
 
 func (client *TCPClient) RegHandler(id interface{}, handler Handler) {
-
+	client.disp.RegHandler(id, handler)
 }
