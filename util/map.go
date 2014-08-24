@@ -41,3 +41,14 @@ func (m *Map) Del(key interface{}) {
 	m.init()
 	delete(m.m, key)
 }
+
+func (m *Map) Len() int {
+	m.RLock()
+	defer m.RUnlock()
+
+	if m.m == nil {
+		return 0
+	} else {
+		return len(m.m)
+	}
+}

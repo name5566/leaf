@@ -18,8 +18,11 @@ func ExampleMap() {
 	m.Set(2, 2)
 	m.Set("3", 3)
 
+	fmt.Println(m.Len())
+
 	// Output:
 	// <nil>
 	// value
 	// <nil>
+	// 3
 }
