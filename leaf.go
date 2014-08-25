@@ -2,21 +2,29 @@ package leaf
 
 import (
 	"github.com/name5566/leaf/log"
-	"github.com/name5566/leaf/network"
 	"os"
 	"os/signal"
 )
 
-var servers []network.Server
-
-func RegServer(server network.Server) {
-	servers = append(servers, server)
+type App interface {
+	OnInit()
+	OnDestroy()
 }
 
-func Run(logLevel string, logPath string) {
-	// log
-	if logLevel != "" {
-		logger, err := log.New(logLevel, logPath)
+type Config struct {
+	LogLevel string
+	LogPath  string
+}
+
+var c Config
+
+func SetConfig(_c Config) {
+	c = _c
+}
+
+func Run(app App) {
+	if c.LogLevel != "" {
+		logger, err := log.New(c.LogLevel, c.LogPath)
 		if err != nil {
 			panic(err)
 		}
@@ -25,19 +33,11 @@ func Run(logLevel string, logPath string) {
 	}
 
 	log.Release("Leaf starting up")
+	app.OnInit()
 
-	// servers
-	if len(servers) == 0 {
-		log.Fatal("server not found (call leaf.RegServer first)")
-	}
-	for _, s := range servers {
-		s.Start()
-		defer s.Close()
-	}
-
-	// close
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
 	log.Release("Leaf closing down (signal: %v)", sig)
+	app.OnDestroy()
 }
