@@ -19,8 +19,6 @@ type TCPServer struct {
 	disp            Dispatcher
 }
 
-type ConnSet map[net.Conn]struct{}
-
 func (server *TCPServer) Start() {
 	server.init()
 	go server.run()

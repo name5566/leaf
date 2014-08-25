@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+type ConnSet map[net.Conn]struct{}
+
 type TCPConn struct {
 	sync.Mutex
 	conn      net.Conn
