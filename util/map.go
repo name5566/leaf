@@ -52,3 +52,15 @@ func (m *Map) Len() int {
 		return len(m.m)
 	}
 }
+
+func (m *Map) Range(f func(interface{}, interface{})) {
+	m.RLock()
+	defer m.RUnlock()
+
+	if m.m == nil {
+		return
+	}
+	for k, v := range m.m {
+		f(k, v)
+	}
+}
