@@ -53,7 +53,7 @@ func (m *Map) Len() int {
 	}
 }
 
-func (m *Map) Range(f func(interface{}, interface{})) {
+func (m *Map) RLockRange(f func(interface{}, interface{})) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -62,5 +62,15 @@ func (m *Map) Range(f func(interface{}, interface{})) {
 	}
 	for k, v := range m.m {
 		f(k, v)
+	}
+}
+
+func (m *Map) LockRange(f func(interface{}, interface{}, map[interface{}]interface{})) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.init()
+	for k, v := range m.m {
+		f(k, v, m.m)
 	}
 }
