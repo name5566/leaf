@@ -74,6 +74,7 @@ func (server *TCPServer) run() {
 		agent := server.NewAgent(tcpConn)
 		go func() {
 			agent.Run()
+			agent.OnClose()
 
 			// cleanup
 			tcpConn.Close()

@@ -87,6 +87,7 @@ func (client *TCPClient) connect() {
 	tcpConn := NewTCPConn(conn, client.PendingWriteNum)
 	agent := client.NewAgent(tcpConn)
 	agent.Run()
+	agent.OnClose()
 
 	// cleanup
 	tcpConn.Close()
