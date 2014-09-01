@@ -16,7 +16,6 @@ type TCPServer struct {
 	mutexConns      sync.Mutex
 	wg              sync.WaitGroup
 	closeFlag       bool
-	disp            Dispatcher
 }
 
 func (server *TCPServer) Start() {
@@ -74,7 +73,7 @@ func (server *TCPServer) run() {
 		tcpConn := NewTCPConn(conn, server.PendingWriteNum)
 		agent := server.NewAgent(tcpConn)
 		go func() {
-			server.handle(agent)
+			agent.Run()
 
 			// cleanup
 			tcpConn.Close()
@@ -85,23 +84,6 @@ func (server *TCPServer) run() {
 			server.wg.Done()
 		}()
 	}
-}
-
-func (server *TCPServer) handle(agent Agent) {
-	for {
-		id, msg, err := agent.Read()
-		if err != nil {
-			break
-		}
-
-		handler := server.disp.Handler(id)
-		if handler == nil {
-			break
-		}
-		handler(agent, msg)
-	}
-
-	agent.OnClose()
 }
 
 func (server *TCPServer) Close() {
@@ -116,8 +98,4 @@ func (server *TCPServer) Close() {
 	server.mutexConns.Unlock()
 
 	server.wg.Wait()
-}
-
-func (server *TCPServer) RegHandler(id interface{}, handler Handler) {
-	server.disp.RegHandler(id, handler)
 }

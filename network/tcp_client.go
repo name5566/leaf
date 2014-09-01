@@ -17,7 +17,6 @@ type TCPClient struct {
 	conns           ConnSet
 	wg              sync.WaitGroup
 	closeFlag       bool
-	disp            Dispatcher
 }
 
 func (client *TCPClient) Start() {
@@ -87,7 +86,7 @@ func (client *TCPClient) connect() {
 
 	tcpConn := NewTCPConn(conn, client.PendingWriteNum)
 	agent := client.NewAgent(tcpConn)
-	client.handle(agent)
+	agent.Run()
 
 	// cleanup
 	tcpConn.Close()
@@ -98,23 +97,6 @@ func (client *TCPClient) connect() {
 	client.Unlock()
 
 	client.wg.Done()
-}
-
-func (client *TCPClient) handle(agent Agent) {
-	for {
-		id, msg, err := agent.Read()
-		if err != nil {
-			break
-		}
-
-		handler := client.disp.Handler(id)
-		if handler == nil {
-			break
-		}
-		handler(agent, msg)
-	}
-
-	agent.OnClose()
 }
 
 func (client *TCPClient) Close() {
@@ -129,8 +111,4 @@ func (client *TCPClient) Close() {
 	client.Unlock()
 
 	client.wg.Wait()
-}
-
-func (client *TCPClient) RegHandler(id interface{}, handler Handler) {
-	client.disp.RegHandler(id, handler)
 }
