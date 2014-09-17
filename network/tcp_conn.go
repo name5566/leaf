@@ -99,3 +99,11 @@ func (tcpConn *TCPConn) CopyAndWrite(b []byte) {
 func (tcpConn *TCPConn) Read(b []byte) (int, error) {
 	return tcpConn.conn.Read(b)
 }
+
+func (tcpConn *TCPConn) LocalAddr() net.Addr {
+	return tcpConn.conn.LocalAddr()
+}
+
+func (tcpConn *TCPConn) RemoteAddr() net.Addr {
+	return tcpConn.conn.RemoteAddr()
+}
