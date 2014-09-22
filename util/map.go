@@ -34,6 +34,20 @@ func (m *Map) Set(key interface{}, value interface{}) {
 	m.m[key] = value
 }
 
+func (m *Map) TestAndSet(key interface{}, value interface{}) interface{} {
+	m.Lock()
+	defer m.Unlock()
+
+	m.init()
+
+	if v, ok := m.m[key]; ok {
+		return v
+	} else {
+		m.m[key] = value
+		return nil
+	}
+}
+
 func (m *Map) Del(key interface{}) {
 	m.Lock()
 	defer m.Unlock()
