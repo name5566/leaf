@@ -1,0 +1,53 @@
+package module
+
+import (
+	"sync"
+)
+
+type Module interface {
+	OnInit()
+	OnDestroy()
+	Run(closeSig chan bool)
+}
+
+type module struct {
+	mi       Module
+	closeSig chan bool
+	wg       sync.WaitGroup
+}
+
+var mods []*module
+
+func Register(mi Module) {
+	m := &module{
+		mi:       mi,
+		closeSig: make(chan bool, 1),
+	}
+
+	mods = append(mods, m)
+}
+
+func Init() {
+	for i := 0; i < len(mods); i++ {
+		mods[i].mi.OnInit()
+	}
+
+	for i := 0; i < len(mods); i++ {
+		go run(mods[i])
+	}
+}
+
+func Destroy() {
+	for i := len(mods) - 1; i >= 0; i-- {
+		m := mods[i]
+		m.closeSig <- true
+		m.wg.Wait()
+		m.mi.OnDestroy()
+	}
+}
+
+func run(m *module) {
+	m.wg.Add(1)
+	m.mi.Run(m.closeSig)
+	m.wg.Done()
+}
