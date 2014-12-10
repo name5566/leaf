@@ -19,10 +19,9 @@ type module struct {
 var mods []*module
 
 func Register(mi Module) {
-	m := &module{
-		mi:       mi,
-		closeSig: make(chan bool, 1),
-	}
+	m := new(module)
+	m.mi = mi
+	m.closeSig = make(chan bool, 1)
 
 	mods = append(mods, m)
 }
