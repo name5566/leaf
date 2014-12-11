@@ -81,7 +81,7 @@ func (r *CallRouter) Def(funcName string, f interface{}) {
 	r.mapFunc[funcName] = f
 }
 
-// router
+// route
 func (r *CallRouter) Chan() chan *CallInfo {
 	return r.chanCall
 }
