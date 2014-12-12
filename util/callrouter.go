@@ -6,16 +6,19 @@ import (
 )
 
 type CallRouter struct {
+	// id -> handler
+	//
+	// handler:
 	// func(args []interface{})
 	// func(args []interface{}) interface{}
 	// func(args []interface{}) []interface{}
-	mapFunc  map[string]interface{}
+	mapFunc  map[interface{}]interface{}
 	chanCall chan *CallInfo
 }
 
 type CallInfo struct {
-	funcName string
-	args     []interface{}
+	id   interface{}
+	args []interface{}
 	// nil
 	// chan interface{}
 	// chan []interface{}
@@ -25,60 +28,60 @@ type CallInfo struct {
 // new
 func NewCallRouter(l int) *CallRouter {
 	r := new(CallRouter)
-	r.mapFunc = make(map[string]interface{})
+	r.mapFunc = make(map[interface{}]interface{})
 	r.chanCall = make(chan *CallInfo, l)
 
 	return r
 }
 
 // call (goroutine safe)
-func (r *CallRouter) Call0(funcName string, args ...interface{}) {
+func (r *CallRouter) Call0(id interface{}, args ...interface{}) {
 	r.chanCall <- &CallInfo{
-		funcName: funcName,
-		args:     args,
-		chanRet:  nil,
+		id:      id,
+		args:    args,
+		chanRet: nil,
 	}
 }
 
-func (r *CallRouter) Call1(funcName string, args ...interface{}) chan interface{} {
+func (r *CallRouter) Call1(id interface{}, args ...interface{}) chan interface{} {
 	chanRet := make(chan interface{}, 1)
 
 	r.chanCall <- &CallInfo{
-		funcName: funcName,
-		args:     args,
-		chanRet:  chanRet,
+		id:      id,
+		args:    args,
+		chanRet: chanRet,
 	}
 
 	return chanRet
 }
 
-func (r *CallRouter) CallN(funcName string, args ...interface{}) chan []interface{} {
+func (r *CallRouter) CallN(id interface{}, args ...interface{}) chan []interface{} {
 	chanRet := make(chan []interface{}, 1)
 
 	r.chanCall <- &CallInfo{
-		funcName: funcName,
-		args:     args,
-		chanRet:  chanRet,
+		id:      id,
+		args:    args,
+		chanRet: chanRet,
 	}
 
 	return chanRet
 }
 
 // define (goroutine not safe)
-func (r *CallRouter) Def(funcName string, f interface{}) {
+func (r *CallRouter) Def(id interface{}, f interface{}) {
 	switch f.(type) {
 	case func([]interface{}):
 	case func([]interface{}) interface{}:
 	case func([]interface{}) []interface{}:
 	default:
-		panic(fmt.Sprintf("%v: definition of function is invalid in CallRouter", funcName))
+		panic(fmt.Sprintf("function id %v: definition of function is invalid in CallRouter", id))
 	}
 
-	if _, ok := r.mapFunc[funcName]; ok {
-		panic(fmt.Sprintf("%v: function redefined in CallRouter", funcName))
+	if _, ok := r.mapFunc[id]; ok {
+		panic(fmt.Sprintf("function id %v: function redefined in CallRouter", id))
 	}
 
-	r.mapFunc[funcName] = f
+	r.mapFunc[id] = f
 }
 
 // route
@@ -88,30 +91,30 @@ func (r *CallRouter) Chan() chan *CallInfo {
 
 func (r *CallRouter) Route(ci *CallInfo) error {
 	// function
-	f := r.mapFunc[ci.funcName]
+	f := r.mapFunc[ci.id]
 	if f == nil {
-		return errors.New(fmt.Sprintf("function %v not defined", ci.funcName))
+		return errors.New(fmt.Sprintf("function id %v: function not defined", ci.id))
 	}
 
 	switch ci.chanRet.(type) {
 	case nil:
-		// for Call0
+		// Call0
 		if _, ok := f.(func([]interface{})); !ok {
-			return errors.New(fmt.Sprintf("function %v mismatch Call0", ci.funcName))
+			return errors.New(fmt.Sprintf("function id %v: function mismatch Call0", ci.id))
 		}
 
 		f.(func([]interface{}))(ci.args)
 	case chan interface{}:
-		// for Call1
+		// Call1
 		if _, ok := f.(func([]interface{}) interface{}); !ok {
-			return errors.New(fmt.Sprintf("function %v mismatch Call1", ci.funcName))
+			return errors.New(fmt.Sprintf("function id %v: function mismatch Call1", ci.id))
 		}
 
 		ci.chanRet.(chan interface{}) <- f.(func([]interface{}) interface{})(ci.args)
 	case chan []interface{}:
-		// for CallN
+		// CallN
 		if _, ok := f.(func([]interface{}) []interface{}); !ok {
-			return errors.New(fmt.Sprintf("function %v mismatch CallN", ci.funcName))
+			return errors.New(fmt.Sprintf("function id %v: function mismatch CallN", ci.id))
 		}
 
 		ci.chanRet.(chan []interface{}) <- f.(func([]interface{}) []interface{})(ci.args)
