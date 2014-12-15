@@ -7,21 +7,17 @@ import (
 	"os/signal"
 )
 
-type Config struct {
+type Conf struct {
 	LogLevel string
 	LogPath  string
 }
 
-var c Config
-
-func SetConfig(_c Config) {
-	c = _c
-}
+var C Conf
 
 func Run(mods ...module.Module) {
 	// logger
-	if c.LogLevel != "" {
-		logger, err := log.New(c.LogLevel, c.LogPath)
+	if C.LogLevel != "" {
+		logger, err := log.New(C.LogLevel, C.LogPath)
 		if err != nil {
 			panic(err)
 		}
