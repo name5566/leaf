@@ -84,7 +84,7 @@ func (r *CallRouter) Def(id interface{}, f interface{}) {
 	r.mapFunc[id] = f
 }
 
-// route
+// route (goroutine not safe)
 func (r *CallRouter) Chan() chan *CallInfo {
 	return r.chanCall
 }
