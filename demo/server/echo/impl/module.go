@@ -4,21 +4,16 @@ import (
 	"github.com/name5566/leaf/demo/server/echo"
 	"github.com/name5566/leaf/log"
 	"github.com/name5566/leaf/network"
-	"github.com/name5566/leaf/util"
 )
 
-// module
-type Module struct {
-}
+type Module struct{}
 
 func (m *Module) OnInit() {
-	echo.R = util.NewCallRouter(100000)
+	// echo function
 	echo.R.Def("echo", func(args []interface{}) {
 		conn := args[0].(*network.TCPConn)
-		parser := args[1].(*network.MsgParser)
-		data := args[2].([]byte)
-
-		parser.Write(conn, data)
+		data := args[1].([]byte)
+		conn.WriteMsg(data)
 	})
 
 	log.Release("Init the Echo module")

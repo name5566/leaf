@@ -5,33 +5,16 @@ import (
 	"github.com/name5566/leaf/network"
 )
 
-// config
-const (
-	serverAddr = ":8000"
-	clientNum  = 100
-)
-
-// module
 type Module struct {
 	server *network.TCPServer
 }
 
 func (m *Module) OnInit() {
-	// server
 	m.server = &network.TCPServer{
-		Addr:       serverAddr,
-		MaxConnNum: clientNum,
-	}
-
-	// msg parser
-	parser := network.NewMsgParser()
-
-	// agent allocator
-	m.server.NewAgent = func(conn *network.TCPConn) network.Agent {
-		return &Agent{
-			conn:   conn,
-			parser: parser,
-		}
+		Addr:            ":8000",
+		MaxConnNum:      10000,
+		PendingWriteNum: 100,
+		NewAgent:        newAgent,
 	}
 
 	log.Release("Gate module addr %v", m.server.Addr)

@@ -7,38 +7,18 @@ import (
 	"time"
 )
 
-// config
-const (
-	serverAddr = "127.0.0.1:8000"
-	clientNum  = 1
-)
-
 // module
 type Module struct {
 	client *network.TCPClient
 }
 
 func (m *Module) OnInit() {
-	// client
 	m.client = &network.TCPClient{
-		Addr:    serverAddr,
-		ConnNum: clientNum,
-	}
-
-	// msg parser
-	parser := network.NewMsgParser()
-
-	// agent allocator
-	m.client.NewAgent = func(conn *network.TCPConn) network.Agent {
-		a := &Agent{
-			conn:   conn,
-			parser: parser,
-		}
-
-		// msg "hi"
-		parser.Write(conn, []byte("hi"))
-
-		return a
+		Addr:            "127.0.0.1:8000",
+		ConnNum:         1,
+		ConnectInterval: time.Second,
+		PendingWriteNum: 100,
+		NewAgent:        newAgent,
 	}
 }
 
@@ -52,24 +32,27 @@ func (m *Module) Run(closeSig chan bool) {
 
 // agent
 type Agent struct {
-	conn   *network.TCPConn
-	parser *network.MsgParser
+	conn *network.TCPConn
+}
+
+func newAgent(conn *network.TCPConn) network.Agent {
+	a := new(Agent)
+	a.conn = conn
+	conn.WriteMsg([]byte("My name is Leaf"))
+	return a
 }
 
 func (a *Agent) Run() {
 	for {
-		// read a msg
-		data, err := a.parser.Read(a.conn)
+		data, err := a.conn.ReadMsg()
 		if err != nil {
 			log.Debug("Network error: %v", err)
 			break
 		}
 
-		log.Debug("msg: %s", data)
+		log.Debug("Echo: %s", data)
 
-		// echo the msg
-		a.parser.Write(a.conn, data)
-
+		a.conn.WriteMsg(data)
 		time.Sleep(time.Second)
 	}
 }

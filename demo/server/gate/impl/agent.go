@@ -7,19 +7,23 @@ import (
 )
 
 type Agent struct {
-	conn   *network.TCPConn
-	parser *network.MsgParser
+	conn *network.TCPConn
+}
+
+func newAgent(conn *network.TCPConn) network.Agent {
+	return &Agent{conn}
 }
 
 func (a *Agent) Run() {
 	for {
-		data, err := a.parser.Read(a.conn)
+		data, err := a.conn.ReadMsg()
 		if err != nil {
 			log.Debug("Network error: %v", err)
 			break
 		}
 
-		echo.R.Call0("echo", a.conn, a.parser, data)
+		// dispatch the msg
+		echo.R.Call0("echo", a.conn, data)
 	}
 }
 
