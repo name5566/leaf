@@ -16,6 +16,13 @@ type TCPServer struct {
 	mutexConns      sync.Mutex
 	wg              sync.WaitGroup
 	closeFlag       bool
+
+	// msg parser
+	LenMsgLen    int
+	MinMsgLen    uint32
+	MaxMsgLen    uint32
+	LittleEndian bool
+	msgParser    *MsgParser
 }
 
 func (server *TCPServer) Start() {
@@ -44,6 +51,12 @@ func (server *TCPServer) init() {
 	server.ln = ln
 	server.conns = make(ConnSet)
 	server.closeFlag = false
+
+	// msg parser
+	msgParser := NewMsgParser()
+	msgParser.SetMsgLen(server.LenMsgLen, server.MinMsgLen, server.MaxMsgLen)
+	msgParser.SetByteOrder(server.LittleEndian)
+	server.msgParser = msgParser
 }
 
 func (server *TCPServer) run() {
@@ -70,7 +83,7 @@ func (server *TCPServer) run() {
 
 		server.wg.Add(1)
 
-		tcpConn := newTCPConn(conn, server.PendingWriteNum)
+		tcpConn := newTCPConn(conn, server.PendingWriteNum, server.msgParser)
 		agent := server.NewAgent(tcpConn)
 		go func() {
 			agent.Run()

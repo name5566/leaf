@@ -13,12 +13,14 @@ type TCPConn struct {
 	conn      net.Conn
 	writeChan chan []byte
 	closeFlag bool
+	msgParser *MsgParser
 }
 
-func newTCPConn(conn net.Conn, pendingWriteNum int) *TCPConn {
+func newTCPConn(conn net.Conn, pendingWriteNum int, msgParser *MsgParser) *TCPConn {
 	tcpConn := new(TCPConn)
 	tcpConn.conn = conn
 	tcpConn.writeChan = make(chan []byte, pendingWriteNum)
+	tcpConn.msgParser = msgParser
 
 	go func() {
 		for b := range tcpConn.writeChan {
@@ -106,4 +108,12 @@ func (tcpConn *TCPConn) LocalAddr() net.Addr {
 
 func (tcpConn *TCPConn) RemoteAddr() net.Addr {
 	return tcpConn.conn.RemoteAddr()
+}
+
+func (tcpConn *TCPConn) ReadMsg() ([]byte, error) {
+	return tcpConn.msgParser.Read(tcpConn)
+}
+
+func (tcpConn *TCPConn) WriteMsg(args ...[]byte) error {
+	return tcpConn.msgParser.Write(tcpConn, args...)
 }

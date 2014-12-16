@@ -17,6 +17,13 @@ type TCPClient struct {
 	conns           ConnSet
 	wg              sync.WaitGroup
 	closeFlag       bool
+
+	// msg parser
+	LenMsgLen    int
+	MinMsgLen    uint32
+	MaxMsgLen    uint32
+	LittleEndian bool
+	msgParser    *MsgParser
 }
 
 func (client *TCPClient) Start() {
@@ -52,6 +59,12 @@ func (client *TCPClient) init() {
 
 	client.conns = make(ConnSet)
 	client.closeFlag = false
+
+	// msg parser
+	msgParser := NewMsgParser()
+	msgParser.SetMsgLen(client.LenMsgLen, client.MinMsgLen, client.MaxMsgLen)
+	msgParser.SetByteOrder(client.LittleEndian)
+	client.msgParser = msgParser
 }
 
 func (client *TCPClient) dial() net.Conn {
@@ -84,7 +97,7 @@ func (client *TCPClient) connect() {
 
 	client.wg.Add(1)
 
-	tcpConn := newTCPConn(conn, client.PendingWriteNum)
+	tcpConn := newTCPConn(conn, client.PendingWriteNum, client.msgParser)
 	agent := client.NewAgent(tcpConn)
 	agent.Run()
 	agent.OnClose()
