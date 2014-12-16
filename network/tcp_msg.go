@@ -59,6 +59,7 @@ func (p *MsgParser) SetByteOrder(littleEndian bool) {
 	p.littleEndian = littleEndian
 }
 
+// goroutine safe
 func (p *MsgParser) Read(conn *TCPConn) ([]byte, error) {
 	var b [4]byte
 	bufMsgLen := b[:p.lenMsgLen]
@@ -103,6 +104,7 @@ func (p *MsgParser) Read(conn *TCPConn) ([]byte, error) {
 	return msgData, nil
 }
 
+// goroutine safe
 func (p *MsgParser) Write(conn *TCPConn, args ...[]byte) error {
 	// get len
 	var msgLen uint32
