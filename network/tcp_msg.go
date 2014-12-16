@@ -17,38 +17,46 @@ type MsgParser struct {
 	littleEndian bool
 }
 
-func NewMsgParser(lenMsgLen int, minMsgLen uint32, maxMsgLen uint32, littleEndian bool) *MsgParser {
-	if lenMsgLen != 1 || lenMsgLen != 2 || lenMsgLen != 4 {
-		lenMsgLen = 2
+func NewMsgParser() *MsgParser {
+	p := new(MsgParser)
+	p.lenMsgLen = 2
+	p.minMsgLen = 1
+	p.maxMsgLen = 4096
+	p.littleEndian = false
+
+	return p
+}
+
+// It's dangerous to call the method on reading or writing
+func (p *MsgParser) SetMsgLen(lenMsgLen int, minMsgLen uint32, maxMsgLen uint32) {
+	if lenMsgLen == 1 || lenMsgLen == 2 || lenMsgLen == 4 {
+		p.lenMsgLen = lenMsgLen
 	}
-	if minMsgLen == 0 {
-		minMsgLen = 1
+	if minMsgLen != 0 {
+		p.minMsgLen = minMsgLen
 	}
-	if maxMsgLen == 0 {
-		maxMsgLen = 4096
+	if maxMsgLen != 0 {
+		p.maxMsgLen = maxMsgLen
 	}
 
 	var max uint32
-	switch lenMsgLen {
+	switch p.lenMsgLen {
 	case 1:
 		max = math.MaxUint8
 	case 2:
 		max = math.MaxUint16
 	}
-	if minMsgLen > max {
-		minMsgLen = max
+	if p.minMsgLen > max {
+		p.minMsgLen = max
 	}
-	if maxMsgLen > max {
-		maxMsgLen = max
+	if p.maxMsgLen > max {
+		p.maxMsgLen = max
 	}
+}
 
-	p := new(MsgParser)
-	p.lenMsgLen = lenMsgLen
-	p.minMsgLen = minMsgLen
-	p.maxMsgLen = maxMsgLen
+// It's dangerous to call the method on reading or writing
+func (p *MsgParser) SetByteOrder(littleEndian bool) {
 	p.littleEndian = littleEndian
-
-	return p
 }
 
 func (p *MsgParser) Read(conn *TCPConn) ([]byte, error) {
