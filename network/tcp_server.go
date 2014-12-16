@@ -70,7 +70,7 @@ func (server *TCPServer) run() {
 
 		server.wg.Add(1)
 
-		tcpConn := NewTCPConn(conn, server.PendingWriteNum)
+		tcpConn := newTCPConn(conn, server.PendingWriteNum)
 		agent := server.NewAgent(tcpConn)
 		go func() {
 			agent.Run()

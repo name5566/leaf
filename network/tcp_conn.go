@@ -15,7 +15,7 @@ type TCPConn struct {
 	closeFlag bool
 }
 
-func NewTCPConn(conn net.Conn, pendingWriteNum int) *TCPConn {
+func newTCPConn(conn net.Conn, pendingWriteNum int) *TCPConn {
 	tcpConn := new(TCPConn)
 	tcpConn.conn = conn
 	tcpConn.writeChan = make(chan []byte, pendingWriteNum)

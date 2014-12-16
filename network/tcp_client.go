@@ -84,7 +84,7 @@ func (client *TCPClient) connect() {
 
 	client.wg.Add(1)
 
-	tcpConn := NewTCPConn(conn, client.PendingWriteNum)
+	tcpConn := newTCPConn(conn, client.PendingWriteNum)
 	agent := client.NewAgent(tcpConn)
 	agent.Run()
 	agent.OnClose()
