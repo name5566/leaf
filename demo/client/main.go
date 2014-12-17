@@ -38,12 +38,18 @@ type Agent struct {
 func newAgent(conn *network.TCPConn) network.Agent {
 	a := new(Agent)
 	a.conn = conn
-	conn.WriteMsg([]byte("My name is Leaf"))
+
+	// write msg
+	msg := "My name is Leaf"
+	log.Debug("Send: %v", msg)
+	conn.WriteMsg([]byte(msg))
+
 	return a
 }
 
 func (a *Agent) Run() {
 	for {
+		// read msg
 		data, err := a.conn.ReadMsg()
 		if err != nil {
 			log.Debug("Network error: %v", err)
@@ -51,15 +57,13 @@ func (a *Agent) Run() {
 		}
 
 		log.Debug("Echo: %s", data)
-
-		a.conn.WriteMsg(data)
 		time.Sleep(time.Second)
+		log.Debug("Send: %s", data)
+		a.conn.WriteMsg(data)
 	}
 }
 
-func (a *Agent) OnClose() {
-
-}
+func (a *Agent) OnClose() {}
 
 // main
 func main() {
