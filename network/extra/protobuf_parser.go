@@ -31,7 +31,7 @@ func (p *ProtobufParser) SetByteOrder(littleEndian bool) {
 }
 
 // It's dangerous to call the method on marshaling or unmarshaling
-func (p *ProtobufParser) Register(msg proto.Message) {
+func (p *ProtobufParser) Register(msg proto.Message) (id uint16) {
 	if len(p.msgType) >= math.MaxUint16 {
 		log.Fatal("too many protobuf messages (max = %v)", math.MaxUint16)
 	}
@@ -42,7 +42,9 @@ func (p *ProtobufParser) Register(msg proto.Message) {
 	}
 
 	p.msgType = append(p.msgType, t)
-	p.msgID[t] = uint16(len(p.msgType) - 1)
+	id = uint16(len(p.msgType) - 1)
+	p.msgID[t] = id
+	return
 }
 
 // goroutine safe
