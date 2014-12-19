@@ -32,12 +32,12 @@ func NewProtobufRouter() *ProtobufRouter {
 	return r
 }
 
-// It's dangerous to call the method on routing or marshaling
+// It's dangerous to call the method on routing or marshaling (unmarshaling)
 func (r *ProtobufRouter) SetByteOrder(littleEndian bool) {
 	r.littleEndian = littleEndian
 }
 
-// It's dangerous to call the method on routing or marshaling
+// It's dangerous to call the method on routing or marshaling (unmarshaling)
 func (r *ProtobufRouter) Register(msg proto.Message, msgRouter *util.CallRouter) {
 	if len(r.msgInfo) >= math.MaxUint16 {
 		log.Fatal("too many protobuf messages (max = %v)", math.MaxUint16)
@@ -57,9 +57,25 @@ func (r *ProtobufRouter) Register(msg proto.Message, msgRouter *util.CallRouter)
 }
 
 // goroutine safe
-func (r *ProtobufRouter) Route(data []byte) error {
+func (r *ProtobufRouter) Route(msg proto.Message, userData interface{}) error {
+	msgType := reflect.TypeOf(msg)
+
+	id, ok := r.msgID[msgType]
+	if !ok {
+		return errors.New(fmt.Sprintf("message %s not registered", msgType))
+	}
+
+	msgRouter := r.msgInfo[id].msgRouter
+	if msgRouter != nil {
+		msgRouter.Call0(msgType, msg, userData)
+	}
+	return nil
+}
+
+// goroutine safe
+func (r *ProtobufRouter) Unmarshal(data []byte) (proto.Message, error) {
 	if len(data) < 2 {
-		return errors.New("protobuf data too short")
+		return nil, errors.New("protobuf data too short")
 	}
 
 	// id
@@ -72,21 +88,10 @@ func (r *ProtobufRouter) Route(data []byte) error {
 
 	// msg
 	if id >= uint16(len(r.msgInfo)) {
-		return errors.New(fmt.Sprintf("message id %v not registered", id))
+		return nil, errors.New(fmt.Sprintf("message id %v not registered", id))
 	}
-	i := r.msgInfo[id]
-	msg := reflect.New(i.msgType.Elem()).Interface().(proto.Message)
-	err := proto.UnmarshalMerge(data[2:], msg)
-	if err != nil {
-		return err
-	}
-
-	// route
-	if i.msgRouter != nil {
-		i.msgRouter.Call0(i.msgType, msg)
-	}
-
-	return nil
+	msg := reflect.New(r.msgInfo[id].msgType.Elem()).Interface().(proto.Message)
+	return msg, proto.UnmarshalMerge(data[2:], msg)
 }
 
 // goroutine safe
