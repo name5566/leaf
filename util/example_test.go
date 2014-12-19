@@ -43,8 +43,7 @@ func ExampleCallRouter() {
 		})
 
 		// route
-		ci := <-r.Chan()
-		r.Route(ci)
+		r.Route(<-r.Chan())
 
 		wg.Done()
 	}()
@@ -53,8 +52,7 @@ func ExampleCallRouter() {
 	wg.Add(1)
 	go func() {
 		// call
-		c := r.Call1("add", 1, 2)
-		fmt.Println(<-c)
+		fmt.Println(r.Call1("add", 1, 2))
 
 		wg.Done()
 	}()

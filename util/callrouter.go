@@ -34,8 +34,8 @@ func NewCallRouter(l int) *CallRouter {
 	return r
 }
 
-// call (goroutine safe)
-func (r *CallRouter) Call0(id interface{}, args ...interface{}) {
+// asyn call (goroutine safe)
+func (r *CallRouter) AsynCall0(id interface{}, args ...interface{}) {
 	r.chanCall <- &CallInfo{
 		id:      id,
 		args:    args,
@@ -43,7 +43,24 @@ func (r *CallRouter) Call0(id interface{}, args ...interface{}) {
 	}
 }
 
-func (r *CallRouter) Call1(id interface{}, args ...interface{}) chan interface{} {
+func (r *CallRouter) AsynCall1(id interface{}, chanRet chan interface{}, args ...interface{}) {
+	r.chanCall <- &CallInfo{
+		id:      id,
+		args:    args,
+		chanRet: chanRet,
+	}
+}
+
+func (r *CallRouter) AsynCallN(id interface{}, chanRet chan []interface{}, args ...interface{}) {
+	r.chanCall <- &CallInfo{
+		id:      id,
+		args:    args,
+		chanRet: chanRet,
+	}
+}
+
+// sync call (goroutine safe)
+func (r *CallRouter) Call1(id interface{}, args ...interface{}) interface{} {
 	chanRet := make(chan interface{}, 1)
 
 	r.chanCall <- &CallInfo{
@@ -52,10 +69,10 @@ func (r *CallRouter) Call1(id interface{}, args ...interface{}) chan interface{}
 		chanRet: chanRet,
 	}
 
-	return chanRet
+	return <-chanRet
 }
 
-func (r *CallRouter) CallN(id interface{}, args ...interface{}) chan []interface{} {
+func (r *CallRouter) CallN(id interface{}, args ...interface{}) []interface{} {
 	chanRet := make(chan []interface{}, 1)
 
 	r.chanCall <- &CallInfo{
@@ -64,7 +81,7 @@ func (r *CallRouter) CallN(id interface{}, args ...interface{}) chan []interface
 		chanRet: chanRet,
 	}
 
-	return chanRet
+	return <-chanRet
 }
 
 // define (goroutine not safe)
