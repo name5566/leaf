@@ -23,7 +23,7 @@ func (a *Agent) Run() {
 		}
 
 		// dispatch the msg
-		echo.R.Call0("echo", a.conn, data)
+		echo.R.AsynCall0("echo", a.conn, data)
 	}
 }
 
