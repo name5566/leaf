@@ -115,23 +115,23 @@ func (r *CallRouter) Route(ci *CallInfo) error {
 
 	switch ci.chanRet.(type) {
 	case nil:
-		// Call0
+		// AsynCall0
 		if _, ok := f.(func([]interface{})); !ok {
-			return errors.New(fmt.Sprintf("function id %v: function mismatch Call0", ci.id))
+			return errors.New(fmt.Sprintf("function id %v: function mismatch AsynCall0", ci.id))
 		}
 
 		f.(func([]interface{}))(ci.args)
 	case chan interface{}:
-		// Call1
+		// Call1 or AsynCall1
 		if _, ok := f.(func([]interface{}) interface{}); !ok {
-			return errors.New(fmt.Sprintf("function id %v: function mismatch Call1", ci.id))
+			return errors.New(fmt.Sprintf("function id %v: function mismatch Call1 or AsynCall1", ci.id))
 		}
 
 		ci.chanRet.(chan interface{}) <- f.(func([]interface{}) interface{})(ci.args)
 	case chan []interface{}:
-		// CallN
+		// CallN or AsynCallN
 		if _, ok := f.(func([]interface{}) []interface{}); !ok {
-			return errors.New(fmt.Sprintf("function id %v: function mismatch CallN", ci.id))
+			return errors.New(fmt.Sprintf("function id %v: function mismatch CallN or AsynCallN", ci.id))
 		}
 
 		ci.chanRet.(chan []interface{}) <- f.(func([]interface{}) []interface{})(ci.args)

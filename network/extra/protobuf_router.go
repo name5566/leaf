@@ -67,7 +67,7 @@ func (r *ProtobufRouter) Route(msg proto.Message, userData interface{}) error {
 
 	msgRouter := r.msgInfo[id].msgRouter
 	if msgRouter != nil {
-		msgRouter.Call0(msgType, msg, userData)
+		msgRouter.AsynCall0(msgType, msg, userData)
 	}
 	return nil
 }
