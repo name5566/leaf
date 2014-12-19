@@ -90,15 +90,21 @@ func (r *ProtobufRouter) Route(data []byte) error {
 }
 
 // goroutine safe
-func (r *ProtobufRouter) Marshal(msg proto.Message) (id uint16, data []byte, err error) {
+func (r *ProtobufRouter) Marshal(msg proto.Message) (id []byte, data []byte, err error) {
 	msgType := reflect.TypeOf(msg)
 
 	// id
-	if _id, ok := r.msgID[msgType]; !ok {
+	_id, ok := r.msgID[msgType]
+	if !ok {
 		err = errors.New(fmt.Sprintf("message %s not registered", msgType))
 		return
+	}
+
+	id = make([]byte, 2)
+	if r.littleEndian {
+		binary.LittleEndian.PutUint16(id, _id)
 	} else {
-		id = _id
+		binary.BigEndian.PutUint16(id, _id)
 	}
 
 	// data
