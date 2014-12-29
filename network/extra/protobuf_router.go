@@ -21,9 +21,12 @@ type ProtobufRouter struct {
 }
 
 type ProtobufMsgInfo struct {
-	msgType   reflect.Type
-	msgRouter *util.CallRouter
+	msgType    reflect.Type
+	msgRouter  *util.CallRouter
+	msgHandler ProtobufMsgHandler
 }
+
+type ProtobufMsgHandler func([]interface{})
 
 func NewProtobufRouter() *ProtobufRouter {
 	r := new(ProtobufRouter)
@@ -38,22 +41,34 @@ func (r *ProtobufRouter) SetByteOrder(littleEndian bool) {
 }
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
-func (r *ProtobufRouter) Register(msg proto.Message, msgRouter *util.CallRouter) {
-	if len(r.msgInfo) >= math.MaxUint16 {
-		log.Fatal("too many protobuf messages (max = %v)", math.MaxUint16)
-	}
+func (r *ProtobufRouter) RegisterRouter(msg proto.Message, msgRouter *util.CallRouter) {
+	protobufMsgInfo(msg).msgRouter = msgRouter
+}
 
+// It's dangerous to call the method on routing or marshaling (unmarshaling)
+func (r *ProtobufRouter) RegisterHandler(msg proto.Message, msgHandler ProtobufMsgHandler) {
+	protobufMsgInfo(msg).msgHandler = msgHandler
+}
+
+func (r *ProtobufRouter) protobufMsgInfo(msg proto.Message) *ProtobufMsgInfo {
 	msgType := reflect.TypeOf(msg)
 	if msgType == nil || msgType.Kind() != reflect.Ptr {
 		log.Fatal("protobuf message pointer required")
 	}
 
+	if id, ok := r.msgID[msgType]; ok {
+		return r.msgInfo[id]
+	}
+
+	if len(r.msgInfo) >= math.MaxUint16 {
+		log.Fatal("too many protobuf messages (max = %v)", math.MaxUint16)
+	}
+
 	i := new(ProtobufMsgInfo)
 	i.msgType = msgType
-	i.msgRouter = msgRouter
 	r.msgInfo = append(r.msgInfo, i)
-
 	r.msgID[msgType] = uint16(len(r.msgInfo) - 1)
+	return i
 }
 
 // goroutine safe
@@ -65,9 +80,12 @@ func (r *ProtobufRouter) Route(msg proto.Message, userData interface{}) error {
 		return errors.New(fmt.Sprintf("message %s not registered", msgType))
 	}
 
-	msgRouter := r.msgInfo[id].msgRouter
-	if msgRouter != nil {
-		msgRouter.AsynCall0(msgType, msg, userData)
+	i := r.msgInfo[id]
+	if i.msgHandler != nil {
+		i.msgHandler(msgType, msg, userData)
+	}
+	if i.msgRouter != nil {
+		i.msgRouter.AsynCall0(msgType, msg, userData)
 	}
 	return nil
 }
