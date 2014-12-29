@@ -42,12 +42,12 @@ func (r *ProtobufRouter) SetByteOrder(littleEndian bool) {
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
 func (r *ProtobufRouter) RegisterRouter(msg proto.Message, msgRouter *util.CallRouter) {
-	protobufMsgInfo(msg).msgRouter = msgRouter
+	r.protobufMsgInfo(msg).msgRouter = msgRouter
 }
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
 func (r *ProtobufRouter) RegisterHandler(msg proto.Message, msgHandler ProtobufMsgHandler) {
-	protobufMsgInfo(msg).msgHandler = msgHandler
+	r.protobufMsgInfo(msg).msgHandler = msgHandler
 }
 
 func (r *ProtobufRouter) protobufMsgInfo(msg proto.Message) *ProtobufMsgInfo {
@@ -82,7 +82,7 @@ func (r *ProtobufRouter) Route(msg proto.Message, userData interface{}) error {
 
 	i := r.msgInfo[id]
 	if i.msgHandler != nil {
-		i.msgHandler(msgType, msg, userData)
+		i.msgHandler([]interface{}{msgType, msg, userData})
 	}
 	if i.msgRouter != nil {
 		i.msgRouter.AsynCall0(msgType, msg, userData)
