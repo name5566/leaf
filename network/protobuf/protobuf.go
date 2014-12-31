@@ -91,7 +91,7 @@ func (p *Processor) Route(msg proto.Message, userData interface{}) error {
 
 	i := p.msgInfo[id]
 	if i.msgHandler != nil {
-		i.msgHandler([]interface{}{msgType, msg, userData})
+		i.msgHandler([]interface{}{msg, userData})
 	}
 	if i.msgRouter != nil {
 		i.msgRouter.AsynCall0(msgType, msg, userData)
