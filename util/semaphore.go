@@ -2,7 +2,7 @@ package util
 
 type Semaphore chan struct{}
 
-func NewSemaphore(n int) Semaphore {
+func MakeSemaphore(n int) Semaphore {
 	return make(Semaphore, n)
 }
 
