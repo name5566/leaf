@@ -143,3 +143,10 @@ func (p *Processor) Marshal(msg proto.Message) (id []byte, data []byte, err erro
 	data, err = proto.Marshal(msg)
 	return
 }
+
+// goroutine safe
+func (p *Processor) Range(f func(id uint16, t reflect.Type)) {
+	for id, i := range p.msgInfo {
+		f(uint16(id), i.msgType)
+	}
+}
