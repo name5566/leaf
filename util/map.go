@@ -15,10 +15,7 @@ func (m *Map) init() {
 	}
 }
 
-func (m *Map) Get(key interface{}) interface{} {
-	m.RLock()
-	defer m.RUnlock()
-
+func (m *Map) UnsafeGet(key interface{}) interface{} {
 	if m.m == nil {
 		return nil
 	} else {
@@ -26,12 +23,21 @@ func (m *Map) Get(key interface{}) interface{} {
 	}
 }
 
+func (m *Map) Get(key interface{}) interface{} {
+	m.RLock()
+	defer m.RUnlock()
+	return m.UnsafeGet(key)
+}
+
+func (m *Map) UnsafeSet(key interface{}, value interface{}) {
+	m.init()
+	m.m[key] = value
+}
+
 func (m *Map) Set(key interface{}, value interface{}) {
 	m.Lock()
 	defer m.Unlock()
-
-	m.init()
-	m.m[key] = value
+	m.UnsafeSet(key, value)
 }
 
 func (m *Map) TestAndSet(key interface{}, value interface{}) interface{} {
@@ -48,18 +54,18 @@ func (m *Map) TestAndSet(key interface{}, value interface{}) interface{} {
 	}
 }
 
-func (m *Map) Del(key interface{}) {
-	m.Lock()
-	defer m.Unlock()
-
+func (m *Map) UnsafeDel(key interface{}) {
 	m.init()
 	delete(m.m, key)
 }
 
-func (m *Map) Len() int {
-	m.RLock()
-	defer m.RUnlock()
+func (m *Map) Del(key interface{}) {
+	m.Lock()
+	defer m.Unlock()
+	m.UnsafeDel(key)
+}
 
+func (m *Map) UnsafeLen() int {
 	if m.m == nil {
 		return 0
 	} else {
@@ -67,10 +73,13 @@ func (m *Map) Len() int {
 	}
 }
 
-func (m *Map) RLockRange(f func(interface{}, interface{})) {
+func (m *Map) Len() int {
 	m.RLock()
 	defer m.RUnlock()
+	return m.UnsafeLen()
+}
 
+func (m *Map) UnsafeRange(f func(interface{}, interface{})) {
 	if m.m == nil {
 		return
 	}
@@ -79,12 +88,14 @@ func (m *Map) RLockRange(f func(interface{}, interface{})) {
 	}
 }
 
-func (m *Map) LockRange(f func(interface{}, interface{}, map[interface{}]interface{})) {
+func (m *Map) RLockRange(f func(interface{}, interface{})) {
+	m.RLock()
+	defer m.RUnlock()
+	m.UnsafeRange(f)
+}
+
+func (m *Map) LockRange(f func(interface{}, interface{})) {
 	m.Lock()
 	defer m.Unlock()
-
-	m.init()
-	for k, v := range m.m {
-		f(k, v, m.m)
-	}
+	m.UnsafeRange(f)
 }
