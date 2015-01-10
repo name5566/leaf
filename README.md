@@ -1,4 +1,4 @@
-Leaf [![Build Status](https://travis-ci.org/name5566/leaf.svg)](https://travis-ci.org/name5566/leaf)
+Leaf
 ====
 A game server framework (Alpha)
 
