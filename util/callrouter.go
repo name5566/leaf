@@ -139,9 +139,3 @@ func (r *CallRouter) Route(ci *CallInfo) error {
 
 	return nil
 }
-
-func (r *CallRouter) RouteAll() {
-	for len(r.chanCall) > 0 {
-		r.Route(<-r.chanCall)
-	}
-}
