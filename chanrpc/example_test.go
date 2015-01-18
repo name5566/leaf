@@ -15,7 +15,7 @@ func Example() {
 	// goroutine 1
 	go func() {
 		s.Register("f0", func(args []interface{}) {
-			fmt.Println("f0")
+
 		})
 
 		s.Register("f1", func(args []interface{}) interface{} {
@@ -114,7 +114,6 @@ func Example() {
 
 		// go
 		c.Go("f0")
-		c.Go("add", 1, 2)
 
 		wg.Done()
 	}()
@@ -122,13 +121,10 @@ func Example() {
 	wg.Wait()
 
 	// Output:
-	// f0
 	// 1
 	// 1 2 3
 	// 3
-	// f0
 	// 1
 	// 1 2 3
 	// 3
-	// f0
 }
