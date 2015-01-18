@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/name5566/leaf/chanrpc"
 	"github.com/name5566/leaf/log"
-	"github.com/name5566/leaf/util"
 	"math"
 	"reflect"
 )
@@ -22,7 +22,7 @@ type Processor struct {
 
 type MsgInfo struct {
 	msgType    reflect.Type
-	msgRouter  *util.CallRouter
+	msgRouter  *chanrpc.Server
 	msgHandler MsgHandler
 }
 
@@ -60,7 +60,7 @@ func (p *Processor) Register(msg proto.Message) {
 }
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
-func (p *Processor) SetRouter(msg proto.Message, msgRouter *util.CallRouter) {
+func (p *Processor) SetRouter(msg proto.Message, msgRouter *chanrpc.Server) {
 	msgType := reflect.TypeOf(msg)
 	id, ok := p.msgID[msgType]
 	if !ok {
@@ -94,7 +94,7 @@ func (p *Processor) Route(msg proto.Message, userData interface{}) error {
 		i.msgHandler([]interface{}{msg, userData})
 	}
 	if i.msgRouter != nil {
-		i.msgRouter.AsynCall0(msgType, msg, userData)
+		i.msgRouter.Go(msgType, msg, userData)
 	}
 	return nil
 }
