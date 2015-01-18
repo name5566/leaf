@@ -27,38 +27,3 @@ func ExampleMap() {
 	// <nil>
 	// 3
 }
-
-func ExampleCallRouter() {
-	r := util.NewCallRouter(10)
-	var wg sync.WaitGroup
-
-	// goroutine 1
-	wg.Add(1)
-	go func() {
-		// def
-		r.Def("add", func(args []interface{}) interface{} {
-			num1 := args[0].(int)
-			num2 := args[1].(int)
-			return num1 + num2
-		})
-
-		// route
-		r.Route(<-r.Chan())
-
-		wg.Done()
-	}()
-
-	// goroutine 2
-	wg.Add(1)
-	go func() {
-		// call
-		fmt.Println(r.Call1("add", 1, 2))
-
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	// Output:
-	// 3
-}
