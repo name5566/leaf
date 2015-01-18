@@ -52,7 +52,7 @@ func NewServer(l int) *Server {
 	return s
 }
 
-// you must call the function before calling Open function
+// you must call the function before calling Open and Go
 func (s *Server) Register(id interface{}, f interface{}) {
 	switch f.(type) {
 	case func([]interface{}):
@@ -107,6 +107,19 @@ func (s *Server) Exec(ci *CallInfo) (err error) {
 	}
 
 	panic("bug")
+}
+
+// goroutine safe
+func (s *Server) Go(id interface{}, args ...interface{}) {
+	f := s.functions[id]
+	if f == nil {
+		return
+	}
+
+	s.ChanCall <- &CallInfo{
+		f:    f,
+		args: args,
+	}
 }
 
 func (s *Server) Close() {
