@@ -116,6 +116,10 @@ func (s *Server) Go(id interface{}, args ...interface{}) {
 		return
 	}
 
+	defer func() {
+		recover()
+	}()
+
 	s.ChanCall <- &CallInfo{
 		f:    f,
 		args: args,
