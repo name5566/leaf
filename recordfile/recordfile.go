@@ -2,6 +2,7 @@ package recordfile
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -46,18 +47,25 @@ func New(st interface{}) (*RecordFile, error) {
 		case reflect.Float32:
 		case reflect.Float64:
 		case reflect.String:
+		case reflect.Struct:
+		case reflect.Array:
+		case reflect.Slice:
 		default:
 			return nil, errors.New(fmt.Sprintf("invalid type: %v %v",
 				f.Name, kind.String()))
 		}
 
 		tag := f.Tag
-		switch tag {
-		case "":
-		case "index":
-		default:
-			return nil, errors.New(fmt.Sprintf("invalid tag: %v %v",
-				f.Name, string(tag)))
+		if tag == "index" {
+			switch kind {
+			case reflect.Struct:
+				fallthrough
+			case reflect.Array:
+				fallthrough
+			case reflect.Slice:
+				return nil, errors.New(fmt.Sprintf("invalid tag: %v %v",
+					f.Name, tag))
+			}
 		}
 	}
 
@@ -162,6 +170,10 @@ func (rf *RecordFile) Read(name string) error {
 				}
 			} else if kind == reflect.String {
 				field.SetString(strField)
+			} else if kind == reflect.Struct ||
+				kind == reflect.Array ||
+				kind == reflect.Slice {
+				err = json.Unmarshal([]byte(strField), field.Addr().Interface())
 			}
 
 			if err != nil {

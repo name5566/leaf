@@ -13,6 +13,13 @@ func Example() {
 		// index 1
 		IndexStr string "index"
 		Str      string
+		Arr1     [2]int
+		Arr2     [3][2]int
+		Arr3     []int
+		St       struct {
+			Name string "name"
+			Num  int    "num"
+		}
 	}
 
 	rf, err := recordfile.New(Record{})
@@ -38,6 +45,10 @@ func Example() {
 
 	r = rf.Indexes(1)["three"].(*Record)
 	fmt.Println(r.Str)
+	fmt.Println(r.Arr1[1])
+	fmt.Println(r.Arr2[2][0])
+	fmt.Println(r.Arr3[0])
+	fmt.Println(r.St.Name)
 
 	// Output:
 	// 1
@@ -46,4 +57,8 @@ func Example() {
 	// cat
 	// cat
 	// book
+	// 6
+	// 4
+	// 6
+	// name5566
 }
