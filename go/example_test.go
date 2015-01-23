@@ -9,10 +9,12 @@ func Example() {
 	d := g.New(10)
 
 	// go 1
+	var res int
 	d.Go(func() {
-		fmt.Print("Hello ")
+		fmt.Println("1 + 1 = ?")
+		res = 1 + 1
 	}, func() {
-		fmt.Println("World")
+		fmt.Println(res)
 	})
 
 	d.Cb(<-d.ChanCb)
@@ -27,6 +29,7 @@ func Example() {
 	d.Close()
 
 	// Output:
-	// Hello World
+	// 1 + 1 = ?
+	// 2
 	// My name is Leaf
 }
