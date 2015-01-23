@@ -8,17 +8,20 @@ import (
 func Example() {
 	d := timer.NewDispatcher(10)
 
-	var counter int
-	for i := 0; i < 10000; i++ {
-		d.AfterFunc(0, func() {
-			counter++
-		})
+	// timer 1
+	d.AfterFunc(1, func() {
+		fmt.Println("My name is Leaf")
+	})
 
-		(<-d.ChanCb)()
-	}
+	// timer 2
+	t := d.AfterFunc(1, func() {
+		fmt.Println("will not print")
+	})
+	t.Stop()
 
-	fmt.Println(counter)
+	// dispatch
+	(<-d.ChanTimer).Cb()
 
 	// Output:
-	// 10000
+	// My name is Leaf
 }
