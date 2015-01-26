@@ -22,7 +22,9 @@ func (g *Go) Go(f func(), cb func()) {
 }
 
 func (g *Go) Cb(cb func()) {
-	cb()
+	if cb != nil {
+		cb()
+	}
 
 	g.pendingGo--
 }
