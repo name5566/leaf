@@ -88,7 +88,7 @@ func (s *Server) ret(ci *CallInfo, ri *RetInfo) (err error) {
 func (s *Server) Exec(ci *CallInfo) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = r.(error)
+			err = fmt.Errorf("%v", r)
 			s.ret(ci, &RetInfo{err: err})
 		}
 	}()
