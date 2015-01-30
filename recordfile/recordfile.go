@@ -51,8 +51,8 @@ func New(st interface{}) (*RecordFile, error) {
 		case reflect.Array:
 		case reflect.Slice:
 		default:
-			return nil, errors.New(fmt.Sprintf("invalid type: %v %v",
-				f.Name, kind.String()))
+			return nil, fmt.Errorf("invalid type: %v %s",
+				f.Name, kind)
 		}
 
 		tag := f.Tag
@@ -63,8 +63,13 @@ func New(st interface{}) (*RecordFile, error) {
 			case reflect.Array:
 				fallthrough
 			case reflect.Slice:
-				return nil, errors.New(fmt.Sprintf("invalid tag: %v %v",
-					f.Name, tag))
+				return nil, fmt.Errorf("could not index %s field %v %v",
+					kind, i, f.Name)
+			}
+
+			if !f.CanSet() {
+				return nil, fmt.Errorf("could not index unsetable field %v %v",
+					i, f.Name)
 			}
 		}
 	}
@@ -117,8 +122,8 @@ func (rf *RecordFile) Read(name string) error {
 
 		line := lines[n]
 		if len(line) != typeRecord.NumField() {
-			return errors.New(fmt.Sprintf("line %v, field count mismatch: %v %v",
-				n, len(line), typeRecord.NumField()))
+			return fmt.Errorf("line %v, field count mismatch: %v %v",
+				n, len(line), typeRecord.NumField())
 		}
 
 		iIndex := 0
@@ -130,8 +135,7 @@ func (rf *RecordFile) Read(name string) error {
 			strField := line[i]
 			field := record.Field(i)
 			if !field.CanSet() {
-				return errors.New(fmt.Sprintf("could not set field %v %v",
-					i, f.Name))
+				continue
 			}
 
 			var err error
@@ -177,8 +181,8 @@ func (rf *RecordFile) Read(name string) error {
 			}
 
 			if err != nil {
-				return errors.New(fmt.Sprintf("parse field (row=%v, col=%v) error: %v",
-					n, i, err))
+				return fmt.Errorf("parse field (row=%v, col=%v) error: %v",
+					n, i, err)
 			}
 
 			// indexes
@@ -186,8 +190,8 @@ func (rf *RecordFile) Read(name string) error {
 				index := indexes[iIndex]
 				iIndex++
 				if _, ok := index[field.Interface()]; ok {
-					return errors.New(fmt.Sprintf("index error: duplicate at (row=%v, col=%v)",
-						n, i))
+					return fmt.Errorf("index error: duplicate at (row=%v, col=%v)",
+						n, i)
 				}
 				index[field.Interface()] = records[n-1]
 			}
