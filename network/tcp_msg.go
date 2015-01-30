@@ -45,6 +45,8 @@ func (p *MsgParser) SetMsgLen(lenMsgLen int, minMsgLen uint32, maxMsgLen uint32)
 		max = math.MaxUint8
 	case 2:
 		max = math.MaxUint16
+	case 4:
+		max = math.MaxUint32
 	}
 	if p.minMsgLen > max {
 		p.minMsgLen = max
