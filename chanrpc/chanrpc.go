@@ -159,7 +159,7 @@ func (c *Client) call(ci *CallInfo) (err error) {
 func (c *Client) f(id interface{}, n int) (f interface{}, err error) {
 	f = c.s.functions[id]
 	if f == nil {
-		err = errors.New(fmt.Sprintf("function id %v: function not registered", id))
+		err = fmt.Errorf("function id %v: function not registered", id)
 		return
 	}
 
@@ -176,7 +176,7 @@ func (c *Client) f(id interface{}, n int) (f interface{}, err error) {
 	}
 
 	if !ok {
-		err = errors.New(fmt.Sprintf("function id %v: return type mismatch", id))
+		err = fmt.Errorf("function id %v: return type mismatch", id)
 	}
 	return
 }

@@ -86,7 +86,7 @@ func (p *Processor) Route(msg proto.Message, userData interface{}) error {
 	msgType := reflect.TypeOf(msg)
 	id, ok := p.msgID[msgType]
 	if !ok {
-		return errors.New(fmt.Sprintf("message %s not registered", msgType))
+		return fmt.Errorf("message %s not registered", msgType)
 	}
 
 	i := p.msgInfo[id]
@@ -115,7 +115,7 @@ func (p *Processor) Unmarshal(data []byte) (proto.Message, error) {
 
 	// msg
 	if id >= uint16(len(p.msgInfo)) {
-		return nil, errors.New(fmt.Sprintf("message id %v not registered", id))
+		return nil, fmt.Errorf("message id %v not registered", id)
 	}
 	msg := reflect.New(p.msgInfo[id].msgType.Elem()).Interface().(proto.Message)
 	return msg, proto.UnmarshalMerge(data[2:], msg)
@@ -128,7 +128,7 @@ func (p *Processor) Marshal(msg proto.Message) (id []byte, data []byte, err erro
 	// id
 	_id, ok := p.msgID[msgType]
 	if !ok {
-		err = errors.New(fmt.Sprintf("message %s not registered", msgType))
+		err = fmt.Errorf("message %s not registered", msgType)
 		return
 	}
 
