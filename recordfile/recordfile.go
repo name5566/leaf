@@ -66,11 +66,6 @@ func New(st interface{}) (*RecordFile, error) {
 				return nil, fmt.Errorf("could not index %s field %v %v",
 					kind, i, f.Name)
 			}
-
-			if !f.CanSet() {
-				return nil, fmt.Errorf("could not index unsetable field %v %v",
-					i, f.Name)
-			}
 		}
 	}
 
