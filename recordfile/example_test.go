@@ -9,9 +9,9 @@ func Example() {
 	type Record struct {
 		// index 0
 		IndexInt int "index"
-		_Number  int32
 		// index 1
 		IndexStr string "index"
+		_Number  int32
 		Str      string
 		Arr1     [2]int
 		Arr2     [3][2]int
