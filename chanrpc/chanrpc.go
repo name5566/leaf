@@ -292,18 +292,6 @@ func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
 	}
 }
 
-func (c *Client) Go(id interface{}, args ...interface{}) {
-	f := c.s.functions[id]
-	if f == nil {
-		return
-	}
-
-	c.call(&CallInfo{
-		f:    f,
-		args: args,
-	})
-}
-
 func (c *Client) Cb(ri *RetInfo) {
 	switch ri.cb.(type) {
 	case func(error):
