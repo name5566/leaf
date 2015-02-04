@@ -145,14 +145,22 @@ func (s *Server) Open(l int) *Client {
 	return c
 }
 
-func (c *Client) call(ci *CallInfo) (err error) {
+func (c *Client) call(ci *CallInfo, block bool) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
 		}
 	}()
 
-	c.s.ChanCall <- ci
+	if block {
+		c.s.ChanCall <- ci
+	} else {
+		select {
+		case c.s.ChanCall <- ci:
+		default:
+			err = errors.New("chanrpc channel full")
+		}
+	}
 	return
 }
 
@@ -191,7 +199,7 @@ func (c *Client) Call0(id interface{}, args ...interface{}) error {
 		f:       f,
 		args:    args,
 		chanRet: c.chanSyncRet,
-	})
+	}, true)
 	if err != nil {
 		return err
 	}
@@ -210,7 +218,7 @@ func (c *Client) Call1(id interface{}, args ...interface{}) (interface{}, error)
 		f:       f,
 		args:    args,
 		chanRet: c.chanSyncRet,
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +237,7 @@ func (c *Client) CallN(id interface{}, args ...interface{}) ([]interface{}, erro
 		f:       f,
 		args:    args,
 		chanRet: c.chanSyncRet,
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +257,7 @@ func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n 
 		args:    args,
 		chanRet: c.ChanAsynRet,
 		cb:      cb,
-	})
+	}, false)
 	if err != nil {
 		return err
 	}
