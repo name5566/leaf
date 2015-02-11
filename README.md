@@ -2,14 +2,6 @@ Leaf
 ====
 A pragmatic game server framework (Alpha)
 
-TODO
-----
-
-* HTTP
-* WebSocket
-* JSON message
-* DB
-
 Licensing
 ---------
 
