@@ -1,6 +1,6 @@
 package g
 
-// one Go per goroutine
+// one Go per goroutine (goroutine not safe)
 type Go struct {
 	ChanCb    chan func()
 	pendingGo int

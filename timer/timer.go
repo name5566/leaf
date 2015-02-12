@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// one dispatcher per goroutine
+// one dispatcher per goroutine (goroutine not safe)
 type Dispatcher struct {
 	ChanTimer chan *Timer
 }
