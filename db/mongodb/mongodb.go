@@ -5,6 +5,7 @@ import (
 	"github.com/name5566/leaf/log"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"sync"
 )
 
 // session
@@ -44,8 +45,8 @@ func (h *SessionHeap) Pop() interface{} {
 	return s
 }
 
-// one DialContext per goroutine (goroutine not safe)
 type DialContext struct {
+	sync.Mutex
 	sessions SessionHeap
 }
 
@@ -74,25 +75,36 @@ func Dial(url string, sessionNum int) (*DialContext, error) {
 	return c, nil
 }
 
+// goroutine safe
 func (c *DialContext) Close() {
+	c.Lock()
 	for _, s := range c.sessions {
 		s.Close()
 	}
+	c.Unlock()
 }
 
+// goroutine safe
 func (c *DialContext) Ref() *Session {
+	c.Lock()
 	s := c.sessions[0]
 	s.ref++
 	heap.Fix(&c.sessions, 0)
+	c.Unlock()
+
 	s.Refresh()
 	return s
 }
 
+// goroutine safe
 func (c *DialContext) UnRef(s *Session) {
+	c.Lock()
 	s.ref--
 	heap.Fix(&c.sessions, s.index)
+	c.Unlock()
 }
 
+// goroutine safe
 func (c *DialContext) EnsureCounter(db string, collection string, id string) error {
 	s := c.Ref()
 	defer c.UnRef(s)
@@ -108,6 +120,7 @@ func (c *DialContext) EnsureCounter(db string, collection string, id string) err
 	}
 }
 
+// goroutine safe
 func (c *DialContext) NextSeq(db string, collection string, id string) (int, error) {
 	s := c.Ref()
 	defer c.UnRef(s)
@@ -123,6 +136,7 @@ func (c *DialContext) NextSeq(db string, collection string, id string) (int, err
 	return res.Seq, err
 }
 
+// goroutine safe
 func (c *DialContext) EnsureIndex(db string, collection string, key []string) error {
 	s := c.Ref()
 	defer c.UnRef(s)
