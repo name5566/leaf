@@ -170,6 +170,97 @@ func parseCronField(field string, min int, max int) (cronField uint64, err error
 	return
 }
 
+func (e *CronExpr) matchDay(t time.Time) bool {
+	// day-of-month blank
+	if e.dom == 0xfffffffe {
+		return 1<<uint(t.Weekday())&e.dow != 0
+	}
+
+	// day-of-week blank
+	if e.dow == 0x7f {
+		return 1<<uint(t.Day())&e.dom != 0
+	}
+
+	return 1<<uint(t.Weekday())&e.dow != 0 ||
+		1<<uint(t.Day())&e.dom != 0
+}
+
 func (e *CronExpr) Next(t time.Time) time.Time {
-	return time.Time{}
+	// the upcoming second
+	t = t.Truncate(time.Second).Add(time.Second)
+
+	year := t.Year()
+	initFlag := false
+
+retry:
+	// Year
+	if t.Year() > year+1 {
+		return time.Time{}
+	}
+
+	// Month
+	for 1<<uint(t.Month())&e.month == 0 {
+		if !initFlag {
+			initFlag = true
+			t = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+		}
+
+		t = t.AddDate(0, 1, 0)
+		if t.Month() == time.January {
+			goto retry
+		}
+	}
+
+	// Day
+	for !e.matchDay(t) {
+		if !initFlag {
+			initFlag = true
+			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+		}
+
+		t = t.AddDate(0, 0, 1)
+		if t.Day() == 1 {
+			goto retry
+		}
+	}
+
+	// Hours
+	for 1<<uint(t.Hour())&e.hour == 0 {
+		if !initFlag {
+			initFlag = true
+			t = t.Truncate(time.Hour)
+		}
+
+		t = t.Add(time.Hour)
+		if t.Hour() == 0 {
+			goto retry
+		}
+	}
+
+	// Minutes
+	for 1<<uint(t.Minute())&e.min == 0 {
+		if !initFlag {
+			initFlag = true
+			t = t.Truncate(time.Minute)
+		}
+
+		t = t.Add(time.Minute)
+		if t.Minute() == 0 {
+			goto retry
+		}
+	}
+
+	// Seconds
+	for 1<<uint(t.Second())&e.sec == 0 {
+		if !initFlag {
+			initFlag = true
+		}
+
+		t = t.Add(time.Second)
+		if t.Second() == 0 {
+			goto retry
+		}
+	}
+
+	return t
 }
