@@ -3,9 +3,10 @@ package timer_test
 import (
 	"fmt"
 	"github.com/name5566/leaf/timer"
+	"time"
 )
 
-func Example() {
+func ExampleTimer() {
 	d := timer.NewDispatcher(10)
 
 	// timer 1
@@ -24,4 +25,20 @@ func Example() {
 
 	// Output:
 	// My name is Leaf
+}
+
+func ExampleCronExpr() {
+	cronExpr, err := timer.NewCronExpr("0 * * * *")
+	if err != nil {
+		return
+	}
+
+	fmt.Println(cronExpr.Next(time.Date(
+		2000, 1, 1,
+		20, 10, 5,
+		0, time.UTC,
+	)))
+
+	// Output:
+	// 2000-01-01 21:00:00 +0000 UTC
 }
