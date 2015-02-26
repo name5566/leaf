@@ -42,3 +42,20 @@ func ExampleCronExpr() {
 	// Output:
 	// 2000-01-01 21:00:00 +0000 UTC
 }
+
+func ExampleCron() {
+	d := timer.NewDispatcher(10)
+
+	// cron
+	var c *timer.Cron
+	c, _ = d.CronFunc("* * * * * *", func() {
+		fmt.Println("My name is Leaf")
+		c.Stop()
+	})
+
+	// dispatch
+	(<-d.ChanTimer).Cb()
+
+	// Output:
+	// My name is Leaf
+}
