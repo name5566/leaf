@@ -1,6 +1,7 @@
 package timer
 
 import (
+	"errors"
 	"time"
 )
 
@@ -15,6 +16,7 @@ func NewDispatcher(l int) *Dispatcher {
 	return disp
 }
 
+// Timer
 type Timer struct {
 	t  *time.Timer
 	cb func()
@@ -39,4 +41,44 @@ func (disp *Dispatcher) AfterFunc(d time.Duration, cb func()) *Timer {
 		disp.ChanTimer <- t
 	})
 	return t
+}
+
+// Cron
+type Cron struct {
+	t *Timer
+}
+
+func (c *Cron) Stop() {
+	c.t.Stop()
+}
+
+func (disp *Dispatcher) CronFunc(expr string, _cb func()) (*Cron, error) {
+	cronExpr, err := NewCronExpr(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	nextTime := cronExpr.Next(now)
+	if nextTime.IsZero() {
+		return nil, errors.New("next time not found")
+	}
+
+	cron := new(Cron)
+
+	// callback
+	var cb func()
+	cb = func() {
+		defer _cb()
+
+		now := time.Now()
+		nextTime := cronExpr.Next(now)
+		if nextTime.IsZero() {
+			return
+		}
+		cron.t = disp.AfterFunc(nextTime.Sub(now), cb)
+	}
+
+	cron.t = disp.AfterFunc(nextTime.Sub(now), cb)
+	return cron, nil
 }
