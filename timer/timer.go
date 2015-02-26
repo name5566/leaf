@@ -9,24 +9,15 @@ type Dispatcher struct {
 	ChanTimer chan *Timer
 }
 
-type Timer struct {
-	t  *time.Timer
-	cb func()
-}
-
 func NewDispatcher(l int) *Dispatcher {
 	disp := new(Dispatcher)
 	disp.ChanTimer = make(chan *Timer, l)
 	return disp
 }
 
-func (disp *Dispatcher) AfterFunc(d time.Duration, cb func()) *Timer {
-	t := new(Timer)
-	t.cb = cb
-	t.t = time.AfterFunc(d, func() {
-		disp.ChanTimer <- t
-	})
-	return t
+type Timer struct {
+	t  *time.Timer
+	cb func()
 }
 
 func (t *Timer) Stop() {
@@ -39,4 +30,13 @@ func (t *Timer) Cb() {
 		t.cb()
 		t.cb = nil
 	}
+}
+
+func (disp *Dispatcher) AfterFunc(d time.Duration, cb func()) *Timer {
+	t := new(Timer)
+	t.cb = cb
+	t.t = time.AfterFunc(d, func() {
+		disp.ChanTimer <- t
+	})
+	return t
 }
