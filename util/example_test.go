@@ -3,7 +3,6 @@ package util_test
 import (
 	"fmt"
 	"github.com/name5566/leaf/util"
-	"sync"
 )
 
 func ExampleMap() {
@@ -26,4 +25,15 @@ func ExampleMap() {
 	// value
 	// <nil>
 	// 3
+}
+
+func ExampleRand() {
+	i := util.Rand(0, 0, 50, 50)
+	switch i {
+	case 2, 3:
+		fmt.Println("ok")
+	}
+
+	// Output:
+	// ok
 }
