@@ -9,7 +9,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func Rand(p ...uint32) int {
+func RandGroup(p ...uint32) int {
 	if p == nil {
 		panic("args not found")
 	}

@@ -27,8 +27,8 @@ func ExampleMap() {
 	// 3
 }
 
-func ExampleRand() {
-	i := util.Rand(0, 0, 50, 50)
+func ExampleRandGroup() {
+	i := util.RandGroup(0, 0, 50, 50)
 	switch i {
 	case 2, 3:
 		fmt.Println("ok")
