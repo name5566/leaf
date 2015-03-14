@@ -37,3 +37,14 @@ func ExampleRandGroup() {
 	// Output:
 	// ok
 }
+
+func ExampleRandInterval() {
+	v := util.RandInterval(-1, 1)
+	switch v {
+	case -1, 0, 1:
+		fmt.Println("ok")
+	}
+
+	// Output:
+	// ok
+}

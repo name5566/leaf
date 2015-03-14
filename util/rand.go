@@ -37,3 +37,15 @@ func RandGroup(p ...uint32) int {
 
 	panic("bug")
 }
+
+func RandInterval(b1, b2 int32) int32 {
+	if b1 == b2 {
+		return b1
+	}
+
+	min, max := int64(b1), int64(b2)
+	if min > max {
+		min, max = max, min
+	}
+	return int32(rand.Int63n(max-min+1) + min)
+}
