@@ -62,6 +62,14 @@ func (s *Skeleton) AfterFunc(d time.Duration, cb func()) *timer.Timer {
 	return s.dispatcher.AfterFunc(d, cb)
 }
 
+func (s *Skeleton) CronFunc(expr string, cb func()) (*timer.Cron, error) {
+	if s.TimerDispatcherLen == 0 {
+		panic("invalid TimerDispatcherLen")
+	}
+
+	return s.dispatcher.CronFunc(expr, cb)
+}
+
 func (s *Skeleton) Go(f func(), cb func()) {
 	if s.GoLen == 0 {
 		panic("invalid GoLen")
