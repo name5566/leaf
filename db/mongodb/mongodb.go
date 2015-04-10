@@ -143,6 +143,18 @@ func (c *DialContext) EnsureIndex(db string, collection string, key []string) er
 
 	return s.DB(db).C(collection).EnsureIndex(mgo.Index{
 		Key:    key,
+		Unique: false,
+		Sparse: true,
+	})
+}
+
+// goroutine safe
+func (c *DialContext) EnsureUniqueIndex(db string, collection string, key []string) error {
+	s := c.Ref()
+	defer c.UnRef(s)
+
+	return s.DB(db).C(collection).EnsureIndex(mgo.Index{
+		Key:    key,
 		Unique: true,
 		Sparse: true,
 	})
