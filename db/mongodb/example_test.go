@@ -39,7 +39,7 @@ func Example() {
 	}
 
 	// index
-	c.EnsureIndex("test", "counters", []string{"key1"})
+	c.EnsureUniqueIndex("test", "counters", []string{"key1"})
 
 	// Output:
 	// 1
