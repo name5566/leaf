@@ -92,7 +92,7 @@ func (p *Processor) Route(msg interface{}, userData interface{}) error {
 		i.msgHandler([]interface{}{msg, userData})
 	}
 	if i.msgRouter != nil {
-		i.msgRouter.Go(msgType, msg, userData)
+		i.msgRouter.Go(msgID, msg, userData)
 	}
 	return nil
 }
