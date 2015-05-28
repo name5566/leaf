@@ -71,10 +71,10 @@ func (c *LinearContext) Go(f func(), cb func()) {
 		defer c.mutexExecution.Unlock()
 
 		c.mutexLinearGo.Lock()
-		lg := c.linearGo.Remove(c.linearGo.Front()).(*LinearGo)
+		e := c.linearGo.Remove(c.linearGo.Front()).(*LinearGo)
 		c.mutexLinearGo.Unlock()
 
-		lg.f()
-		c.g.ChanCb <- lg.cb
+		e.f()
+		c.g.ChanCb <- e.cb
 	}()
 }

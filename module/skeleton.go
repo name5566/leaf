@@ -78,6 +78,14 @@ func (s *Skeleton) Go(f func(), cb func()) {
 	s.g.Go(f, cb)
 }
 
+func (s *Skeleton) NewLinearContext() *g.LinearContext {
+	if s.GoLen == 0 {
+		panic("invalid GoLen")
+	}
+
+	return s.g.NewLinearContext()
+}
+
 func (s *Skeleton) RegisterChanRPC(id interface{}, f interface{}) {
 	if s.ChanRPCServer == nil {
 		panic("invalid ChanRPCServer")
