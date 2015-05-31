@@ -2,6 +2,7 @@ package g
 
 import (
 	"container/list"
+	"github.com/name5566/leaf/log"
 	"sync"
 )
 
@@ -33,17 +34,28 @@ func (g *Go) Go(f func(), cb func()) {
 	g.pendingGo++
 
 	go func() {
+		defer func() {
+			g.ChanCb <- cb
+			if r := recover(); r != nil {
+				log.Error("%v", r)
+			}
+		}()
+
 		f()
-		g.ChanCb <- cb
 	}()
 }
 
 func (g *Go) Cb(cb func()) {
+	defer func() {
+		g.pendingGo--
+		if r := recover(); r != nil {
+			log.Error("%v", r)
+		}
+	}()
+
 	if cb != nil {
 		cb()
 	}
-
-	g.pendingGo--
 }
 
 func (g *Go) Close() {
@@ -74,7 +86,13 @@ func (c *LinearContext) Go(f func(), cb func()) {
 		e := c.linearGo.Remove(c.linearGo.Front()).(*LinearGo)
 		c.mutexLinearGo.Unlock()
 
+		defer func() {
+			c.g.ChanCb <- e.cb
+			if r := recover(); r != nil {
+				log.Error("%v", r)
+			}
+		}()
+
 		e.f()
-		c.g.ChanCb <- e.cb
 	}()
 }
