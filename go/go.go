@@ -2,7 +2,9 @@ package g
 
 import (
 	"container/list"
+	"github.com/name5566/leaf/conf"
 	"github.com/name5566/leaf/log"
+	"runtime"
 	"sync"
 )
 
@@ -37,7 +39,13 @@ func (g *Go) Go(f func(), cb func()) {
 		defer func() {
 			g.ChanCb <- cb
 			if r := recover(); r != nil {
-				log.Error("%v", r)
+				if conf.LenStackBuf > 0 {
+					buf := make([]byte, conf.LenStackBuf)
+					runtime.Stack(buf, false)
+					log.Error("%v: %s", r, buf)
+				} else {
+					log.Error("%v", r)
+				}
 			}
 		}()
 
@@ -49,7 +57,13 @@ func (g *Go) Cb(cb func()) {
 	defer func() {
 		g.pendingGo--
 		if r := recover(); r != nil {
-			log.Error("%v", r)
+			if conf.LenStackBuf > 0 {
+				buf := make([]byte, conf.LenStackBuf)
+				runtime.Stack(buf, false)
+				log.Error("%v: %s", r, buf)
+			} else {
+				log.Error("%v", r)
+			}
 		}
 	}()
 
@@ -89,7 +103,13 @@ func (c *LinearContext) Go(f func(), cb func()) {
 		defer func() {
 			c.g.ChanCb <- e.cb
 			if r := recover(); r != nil {
-				log.Error("%v", r)
+				if conf.LenStackBuf > 0 {
+					buf := make([]byte, conf.LenStackBuf)
+					runtime.Stack(buf, false)
+					log.Error("%v: %s", r, buf)
+				} else {
+					log.Error("%v", r)
+				}
 			}
 		}()
 

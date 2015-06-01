@@ -3,6 +3,8 @@ package chanrpc
 import (
 	"errors"
 	"fmt"
+	"github.com/name5566/leaf/conf"
+	"runtime"
 )
 
 // one server per goroutine (goroutine not safe)
@@ -88,8 +90,15 @@ func (s *Server) ret(ci *CallInfo, ri *RetInfo) (err error) {
 func (s *Server) Exec(ci *CallInfo) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("%v", r)
-			s.ret(ci, &RetInfo{err: err})
+			if conf.LenStackBuf > 0 {
+				buf := make([]byte, conf.LenStackBuf)
+				runtime.Stack(buf, false)
+				err = fmt.Errorf("%v: %s", r, buf)
+			} else {
+				err = fmt.Errorf("%v", r)
+			}
+
+			s.ret(ci, &RetInfo{err: fmt.Errorf("%v", r)})
 		}
 	}()
 
