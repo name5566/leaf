@@ -2,6 +2,7 @@ package timer
 
 import (
 	"errors"
+	"github.com/name5566/leaf/log"
 	"time"
 )
 
@@ -28,9 +29,15 @@ func (t *Timer) Stop() {
 }
 
 func (t *Timer) Cb() {
+	defer func() {
+		t.cb = nil
+		if r := recover(); r != nil {
+			log.Error("%v", r)
+		}
+	}()
+
 	if t.cb != nil {
 		t.cb()
-		t.cb = nil
 	}
 }
 
