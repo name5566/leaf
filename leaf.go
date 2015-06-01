@@ -1,23 +1,17 @@
 package leaf
 
 import (
+	"github.com/name5566/leaf/conf"
 	"github.com/name5566/leaf/log"
 	"github.com/name5566/leaf/module"
 	"os"
 	"os/signal"
 )
 
-type Conf struct {
-	LogLevel string
-	LogPath  string
-}
-
-var C Conf
-
 func Run(mods ...module.Module) {
 	// logger
-	if C.LogLevel != "" {
-		logger, err := log.New(C.LogLevel, C.LogPath)
+	if conf.LogLevel != "" {
+		logger, err := log.New(conf.LogLevel, conf.LogPath)
 		if err != nil {
 			panic(err)
 		}
