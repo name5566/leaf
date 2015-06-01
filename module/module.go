@@ -1,6 +1,7 @@
 package module
 
 import (
+	"github.com/name5566/leaf/log"
 	"sync"
 )
 
@@ -41,7 +42,16 @@ func Destroy() {
 		m := mods[i]
 		m.closeSig <- true
 		m.wg.Wait()
-		m.mi.OnDestroy()
+
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error("%v", r)
+				}
+			}()
+
+			m.mi.OnDestroy()
+		}()
 	}
 }
 
