@@ -92,8 +92,8 @@ func (s *Server) Exec(ci *CallInfo) (err error) {
 		if r := recover(); r != nil {
 			if conf.LenStackBuf > 0 {
 				buf := make([]byte, conf.LenStackBuf)
-				runtime.Stack(buf, false)
-				err = fmt.Errorf("%v: %s", r, buf)
+				l := runtime.Stack(buf, false)
+				err = fmt.Errorf("%v: %s", r, buf[:l])
 			} else {
 				err = fmt.Errorf("%v", r)
 			}

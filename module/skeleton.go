@@ -44,7 +44,7 @@ func (s *Skeleton) Run(closeSig chan bool) {
 		case ci := <-s.server.ChanCall:
 			err := s.server.Exec(ci)
 			if err != nil {
-				log.Error("chanrpc error: %v", err)
+				log.Error("%v", err)
 			}
 		case cb := <-s.g.ChanCb:
 			s.g.Cb(cb)
