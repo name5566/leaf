@@ -42,16 +42,7 @@ func Destroy() {
 		m := mods[i]
 		m.closeSig <- true
 		m.wg.Wait()
-
-		func() {
-			defer func() {
-				if r := recover(); r != nil {
-					log.Error("%v", r)
-				}
-			}()
-
-			m.mi.OnDestroy()
-		}()
+		destroy(m)
 	}
 }
 
@@ -59,4 +50,14 @@ func run(m *module) {
 	m.wg.Add(1)
 	m.mi.Run(m.closeSig)
 	m.wg.Done()
+}
+
+func destroy(m *module) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("%v", r)
+		}
+	}()
+
+	m.mi.OnDestroy()
 }
