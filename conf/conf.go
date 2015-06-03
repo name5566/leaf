@@ -1,6 +1,6 @@
 package conf
 
-var LenStackBuf = 1024
+var LenStackBuf = 4096
 
 var LogLevel string
 var LogPath string
