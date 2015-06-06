@@ -14,7 +14,13 @@ func DeepClone(v interface{}) interface{} {
 func deepCopy(dst, src reflect.Value) {
 	switch src.Kind() {
 	case reflect.Interface:
-		deepCopy(dst.Elem(), src.Elem())
+		value := src.Elem()
+		if !value.IsValid() {
+			return
+		}
+		newValue := reflect.New(value.Type()).Elem()
+		deepCopy(newValue, value)
+		dst.Set(newValue)
 	case reflect.Ptr:
 		value := src.Elem()
 		if !value.IsValid() {
