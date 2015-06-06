@@ -48,3 +48,40 @@ func ExampleRandInterval() {
 	// Output:
 	// ok
 }
+
+func ExampleDeepClone() {
+	type Struct struct {
+		Point *int
+		Map   map[string]int
+		Slice []int
+	}
+	src := &Struct{
+		new(int),
+		make(map[string]int),
+		[]int{},
+	}
+
+	// value
+	*(src.Point) = 1
+	src.Map["leaf"] = 2
+	src.Slice = append(src.Slice, 3)
+
+	// deep clone
+	// dst := new(Struct)
+	// *dst = *src
+	dst := util.DeepClone(src).(*Struct)
+
+	// new value
+	*(src.Point) = 10
+	src.Map["leaf"] = 20
+	src.Slice[0] = 30
+
+	fmt.Println(*(dst.Point))
+	fmt.Println(dst.Map["leaf"])
+	fmt.Println(dst.Slice[0])
+
+	// Output:
+	// 1
+	// 2
+	// 3
+}
