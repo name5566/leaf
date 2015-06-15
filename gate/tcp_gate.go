@@ -1,10 +1,12 @@
 package gate
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/name5566/leaf/log"
 	"github.com/name5566/leaf/network"
 	"github.com/name5566/leaf/network/json"
 	"github.com/name5566/leaf/network/protobuf"
+	"reflect"
 )
 
 type TCPGate struct {
@@ -55,28 +57,26 @@ func (a *TCPAgent) Run() {
 			break
 		}
 
-		// json
 		if a.gate.JSONProcessor != nil {
+			// json
 			msg, err := a.gate.JSONProcessor.Unmarshal(data)
 			if err != nil {
 				log.Debug("unmarshal json error: %v", err)
 				break
 			}
-			err = a.gate.JSONProcessor.Route(msg, a)
+			err = a.gate.JSONProcessor.Route(msg, Agent(a))
 			if err != nil {
 				log.Debug("route message error: %v", err)
 				break
 			}
-		}
-
-		// protobuf
-		if a.gate.ProtobufProcessor != nil {
+		} else if a.gate.ProtobufProcessor != nil {
+			// protobuf
 			msg, err := a.gate.ProtobufProcessor.Unmarshal(data)
 			if err != nil {
 				log.Debug("unmarshal protobuf error: %v", err)
 				break
 			}
-			err = a.gate.ProtobufProcessor.Route(msg, a)
+			err = a.gate.ProtobufProcessor.Route(msg, Agent(a))
 			if err != nil {
 				log.Debug("route message error: %v", err)
 				break
@@ -85,6 +85,28 @@ func (a *TCPAgent) Run() {
 	}
 }
 
-func (a *TCPAgent) OnClose() {
+func (a *TCPAgent) OnClose() {}
 
+func (a *TCPAgent) WriteMsg(msg interface{}) {
+	if a.gate.JSONProcessor != nil {
+		// json
+		data, err := a.gate.JSONProcessor.Marshal(msg)
+		if err != nil {
+			log.Error("marshal json %v error: %v", reflect.TypeOf(msg), err)
+			return
+		}
+		a.conn.WriteMsg(data)
+	} else if a.gate.ProtobufProcessor != nil {
+		// protobuf
+		id, data, err := a.gate.ProtobufProcessor.Marshal(msg.(proto.Message))
+		if err != nil {
+			log.Error("marshal protobuf %v error: %v", reflect.TypeOf(msg), err)
+			return
+		}
+		a.conn.WriteMsg(id, data)
+	}
+}
+
+func (a *TCPAgent) Close() {
+	a.conn.Close()
 }
