@@ -51,7 +51,7 @@ func (a *TCPAgent) Run() {
 	for {
 		data, err := a.conn.ReadMsg()
 		if err != nil {
-			log.Debug("read msg error: %v", err)
+			log.Debug("read message error: %v", err)
 			break
 		}
 
@@ -64,7 +64,7 @@ func (a *TCPAgent) Run() {
 			}
 			err = a.gate.JSONProcessor.Route(msg, a)
 			if err != nil {
-				log.Debug("route msg error: %v", err)
+				log.Debug("route message error: %v", err)
 				break
 			}
 		}
@@ -78,7 +78,7 @@ func (a *TCPAgent) Run() {
 			}
 			err = a.gate.ProtobufProcessor.Route(msg, a)
 			if err != nil {
-				log.Debug("route msg error: %v", err)
+				log.Debug("route message error: %v", err)
 				break
 			}
 		}
