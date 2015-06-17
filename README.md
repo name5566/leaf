@@ -1,6 +1,6 @@
 Leaf
 ====
-A pragmatic game server framework (Beta)
+A pragmatic game server framework.
 
 Licensing
 ---------
