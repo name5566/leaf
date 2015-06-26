@@ -2,6 +2,7 @@ package gate
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/name5566/leaf/chanrpc"
 	"github.com/name5566/leaf/log"
 	"github.com/name5566/leaf/network"
 	"github.com/name5566/leaf/network/json"
@@ -19,6 +20,7 @@ type TCPGate struct {
 	LittleEndian      bool
 	JSONProcessor     *json.Processor
 	ProtobufProcessor *protobuf.Processor
+	AgentChanRPC      *chanrpc.Server
 }
 
 func (gate *TCPGate) Run(closeSig chan bool) {
@@ -85,7 +87,14 @@ func (a *TCPAgent) Run() {
 	}
 }
 
-func (a *TCPAgent) OnClose() {}
+func (a *TCPAgent) OnClose() {
+	if a.gate.AgentChanRPC != nil {
+		err := a.gate.AgentChanRPC.Open(0).Call0("Close", a)
+		if err != nil {
+			log.Error("chanrpc error: %v", err)
+		}
+	}
+}
 
 func (a *TCPAgent) WriteMsg(msg interface{}) {
 	if a.gate.JSONProcessor != nil {
