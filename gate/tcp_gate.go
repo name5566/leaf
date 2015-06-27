@@ -89,7 +89,7 @@ func (a *TCPAgent) Run() {
 
 func (a *TCPAgent) OnClose() {
 	if a.gate.AgentChanRPC != nil {
-		err := a.gate.AgentChanRPC.Open(0).Call0("Close", a)
+		err := a.gate.AgentChanRPC.Open(0).Call0("AgentClose", a)
 		if err != nil {
 			log.Error("chanrpc error: %v", err)
 		}
