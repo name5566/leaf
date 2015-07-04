@@ -100,7 +100,6 @@ func (client *TCPClient) connect() {
 	tcpConn := newTCPConn(conn, client.PendingWriteNum, client.msgParser)
 	agent := client.NewAgent(tcpConn)
 	agent.Run()
-	agent.OnClose()
 
 	// cleanup
 	tcpConn.Close()
@@ -109,6 +108,7 @@ func (client *TCPClient) connect() {
 		delete(client.conns, conn)
 	}
 	client.Unlock()
+	agent.OnClose()
 
 	client.wg.Done()
 }

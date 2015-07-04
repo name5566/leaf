@@ -87,13 +87,13 @@ func (server *TCPServer) run() {
 		agent := server.NewAgent(tcpConn)
 		go func() {
 			agent.Run()
-			agent.OnClose()
 
 			// cleanup
 			tcpConn.Close()
 			server.mutexConns.Lock()
 			delete(server.conns, conn)
 			server.mutexConns.Unlock()
+			agent.OnClose()
 
 			server.wg.Done()
 		}()
