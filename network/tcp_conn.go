@@ -92,12 +92,6 @@ func (tcpConn *TCPConn) Write(b []byte) {
 	tcpConn.doWrite(b)
 }
 
-func (tcpConn *TCPConn) CopyAndWrite(b []byte) {
-	cb := make([]byte, len(b))
-	copy(cb, b)
-	tcpConn.Write(cb)
-}
-
 func (tcpConn *TCPConn) Read(b []byte) (int, error) {
 	return tcpConn.conn.Read(b)
 }
