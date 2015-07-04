@@ -36,6 +36,11 @@ func (gate *TCPGate) Run(closeSig chan bool) {
 		a := new(TCPAgent)
 		a.conn = conn
 		a.gate = gate
+
+		if gate.AgentChanRPC != nil {
+			gate.AgentChanRPC.Go("NewAgent", a)
+		}
+
 		return a
 	}
 
@@ -89,7 +94,7 @@ func (a *TCPAgent) Run() {
 
 func (a *TCPAgent) OnClose() {
 	if a.gate.AgentChanRPC != nil {
-		err := a.gate.AgentChanRPC.Open(0).Call0("AgentClose", a)
+		err := a.gate.AgentChanRPC.Open(0).Call0("CloseAgent", a)
 		if err != nil {
 			log.Error("chanrpc error: %v", err)
 		}
