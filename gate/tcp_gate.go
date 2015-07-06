@@ -52,8 +52,9 @@ func (gate *TCPGate) Run(closeSig chan bool) {
 func (gate *TCPGate) OnDestroy() {}
 
 type TCPAgent struct {
-	conn *network.TCPConn
-	gate *TCPGate
+	conn     *network.TCPConn
+	gate     *TCPGate
+	userData interface{}
 }
 
 func (a *TCPAgent) Run() {
@@ -123,4 +124,12 @@ func (a *TCPAgent) WriteMsg(msg interface{}) {
 
 func (a *TCPAgent) Close() {
 	a.conn.Close()
+}
+
+func (a *TCPAgent) UserData() interface{} {
+	return a.userData
+}
+
+func (a *TCPAgent) SetUserData(data interface{}) {
+	a.userData = data
 }
