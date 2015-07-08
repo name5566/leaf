@@ -80,6 +80,9 @@ func (c *DialContext) Close() {
 	c.Lock()
 	for _, s := range c.sessions {
 		s.Close()
+		if s.ref != 0 {
+			log.Error("session ref = %v", s.ref)
+		}
 	}
 	c.Unlock()
 }
