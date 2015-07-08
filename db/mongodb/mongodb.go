@@ -88,11 +88,13 @@ func (c *DialContext) Close() {
 func (c *DialContext) Ref() *Session {
 	c.Lock()
 	s := c.sessions[0]
+	if s.ref == 0 {
+		s.Refresh()
+	}
 	s.ref++
 	heap.Fix(&c.sessions, 0)
 	c.Unlock()
 
-	s.Refresh()
 	return s
 }
 
