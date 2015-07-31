@@ -49,6 +49,17 @@ func ExampleRandInterval() {
 	// ok
 }
 
+func ExampleRandIntervalN() {
+	r := util.RandIntervalN(-1, 0, 2)
+	if r[0] == -1 && r[1] == 0 ||
+		r[0] == 0 && r[1] == -1 {
+		fmt.Println("ok")
+	}
+
+	// Output:
+	// ok
+}
+
 func ExampleDeepCopy() {
 	src := []int{1, 2, 3}
 
