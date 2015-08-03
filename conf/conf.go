@@ -1,6 +1,11 @@
 package conf
 
-var LenStackBuf = 4096
+var (
+	LenStackBuf = 4096
 
-var LogLevel string
-var LogPath string
+	LogLevel string
+	LogPath  string
+
+	EnableProfiling bool
+	ProfilePath     string
+)
