@@ -6,6 +6,7 @@ var (
 	LogLevel string
 	LogPath  string
 
-	EnableProfiling bool
-	ProfilePath     string
+	ConsolePort   int    = 23
+	ConsolePrompt string = "Leaf# "
+	ProfilePath   string
 )
