@@ -12,6 +12,7 @@ import (
 var commands = []Command{
 	new(CommandHelp),
 	new(CommandCPUProf),
+	new(CommandProf),
 }
 
 type Command interface {
@@ -58,7 +59,11 @@ func (c *CommandCPUProf) help() string {
 }
 
 func (c *CommandCPUProf) usage() string {
-	return "Usage: cpuprof start|stop"
+	return "cpuprof writes runtime profiling data in the format expected by \r\n" +
+		"the pprof visualization tool\r\n\r\n" +
+		"Usage: cpuprof start|stop\r\n" +
+		"  start - enables CPU profiling\r\n" +
+		"  stop  - stops the current CPU profile"
 }
 
 func (c *CommandCPUProf) run(arg []string) string {
@@ -68,15 +73,7 @@ func (c *CommandCPUProf) run(arg []string) string {
 
 	switch arg[0] {
 	case "start":
-		now := time.Now()
-		fn := path.Join(conf.ProfilePath,
-			fmt.Sprintf("%d%02d%02d_%02d_%02d_%02d.prof",
-				now.Year(),
-				now.Month(),
-				now.Day(),
-				now.Hour(),
-				now.Minute(),
-				now.Second()))
+		fn := profileName() + ".cpuprof"
 		f, err := os.Create(fn)
 		if err != nil {
 			return err.Error()
@@ -93,4 +90,76 @@ func (c *CommandCPUProf) run(arg []string) string {
 	default:
 		return c.usage()
 	}
+}
+
+func profileName() string {
+	now := time.Now()
+	return path.Join(conf.ProfilePath,
+		fmt.Sprintf("%d%02d%02d_%02d_%02d_%02d",
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			now.Hour(),
+			now.Minute(),
+			now.Second()))
+}
+
+// prof
+type CommandProf struct{}
+
+func (c *CommandProf) name() string {
+	return "prof"
+}
+
+func (c *CommandProf) help() string {
+	return "Writes a pprof-formatted snapshot"
+}
+
+func (c *CommandProf) usage() string {
+	return "prof writes runtime profiling data in the format expected by \r\n" +
+		"the pprof visualization tool\r\n\r\n" +
+		"Usage: prof goroutine|heap|thread|block\r\n" +
+		"  goroutine - stack traces of all current goroutines\r\n" +
+		"  heap      - a sampling of all heap allocations\r\n" +
+		"  thread    - stack traces that led to the creation of new OS threads\r\n" +
+		"  block     - stack traces that led to blocking on synchronization primitives"
+}
+
+func (c *CommandProf) run(arg []string) string {
+	if len(arg) == 0 {
+		return c.usage()
+	}
+
+	var (
+		p  *pprof.Profile
+		fn string
+	)
+	switch arg[0] {
+	case "goroutine":
+		p = pprof.Lookup("goroutine")
+		fn = profileName() + ".gprof"
+	case "heap":
+		p = pprof.Lookup("heap")
+		fn = profileName() + ".hprof"
+	case "thread":
+		p = pprof.Lookup("threadcreate")
+		fn = profileName() + ".tprof"
+	case "block":
+		p = pprof.Lookup("block")
+		fn = profileName() + ".bprof"
+	default:
+		return c.usage()
+	}
+
+	f, err := os.Create(fn)
+	if err != nil {
+		return err.Error()
+	}
+	defer f.Close()
+	err = p.WriteTo(f, 0)
+	if err != nil {
+		return err.Error()
+	}
+
+	return fn
 }
