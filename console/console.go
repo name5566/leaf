@@ -53,9 +53,26 @@ func (a *Agent) Run() {
 		if err != nil {
 			break
 		}
-		cmdLine := strings.TrimSuffix(line[:len(line)-1], "\r")
-		if cmdLine == "" {
+		line = strings.TrimSuffix(line[:len(line)-1], "\r")
+
+		arg := strings.Fields(line)
+		if len(arg) == 0 {
 			continue
+		}
+		var c Command
+		for _, _c := range commands {
+			if _c.Name() == arg[0] {
+				c = _c
+				break
+			}
+		}
+		if c == nil {
+			a.conn.Write([]byte("command not found, try `help` for help\r\n"))
+			continue
+		}
+		output := c.Run(arg[1:])
+		if output != "" {
+			a.conn.Write([]byte(output + "\r\n"))
 		}
 	}
 }
