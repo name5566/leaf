@@ -61,7 +61,7 @@ func (a *Agent) Run() {
 		}
 		var c Command
 		for _, _c := range commands {
-			if _c.Name() == arg[0] {
+			if _c.name() == arg[0] {
 				c = _c
 				break
 			}
@@ -70,7 +70,7 @@ func (a *Agent) Run() {
 			a.conn.Write([]byte("command not found, try `help` for help\r\n"))
 			continue
 		}
-		output := c.Run(arg[1:])
+		output := c.run(arg[1:])
 		if output != "" {
 			a.conn.Write([]byte(output + "\r\n"))
 		}
