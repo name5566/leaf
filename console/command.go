@@ -60,12 +60,14 @@ func (c *ExternalCommand) run(_args []string) string {
 
 // you must call the function before calling console.Init
 // goroutine not safe
-func Register(name, help string, server *chanrpc.Server) {
+func Register(name string, help string, f interface{}, server *chanrpc.Server) {
 	for _, c := range commands {
 		if c.name() == name {
 			log.Fatal("command %v is already registered", name)
 		}
 	}
+
+	server.Register(name, f)
 
 	c := new(ExternalCommand)
 	c._name = name

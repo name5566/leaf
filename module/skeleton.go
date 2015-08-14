@@ -2,6 +2,7 @@ package module
 
 import (
 	"github.com/name5566/leaf/chanrpc"
+	"github.com/name5566/leaf/console"
 	"github.com/name5566/leaf/go"
 	"github.com/name5566/leaf/log"
 	"github.com/name5566/leaf/timer"
@@ -15,6 +16,7 @@ type Skeleton struct {
 	g                  *g.Go
 	dispatcher         *timer.Dispatcher
 	server             *chanrpc.Server
+	commandServer      *chanrpc.Server
 }
 
 func (s *Skeleton) Init() {
@@ -32,17 +34,24 @@ func (s *Skeleton) Init() {
 	if s.server == nil {
 		s.server = chanrpc.NewServer(0)
 	}
+	s.commandServer = chanrpc.NewServer(0)
 }
 
 func (s *Skeleton) Run(closeSig chan bool) {
 	for {
 		select {
 		case <-closeSig:
+			s.commandServer.Close()
 			s.server.Close()
 			s.g.Close()
 			return
 		case ci := <-s.server.ChanCall:
 			err := s.server.Exec(ci)
+			if err != nil {
+				log.Error("%v", err)
+			}
+		case ci := <-s.commandServer.ChanCall:
+			err := s.commandServer.Exec(ci)
 			if err != nil {
 				log.Error("%v", err)
 			}
@@ -92,4 +101,8 @@ func (s *Skeleton) RegisterChanRPC(id interface{}, f interface{}) {
 	}
 
 	s.server.Register(id, f)
+}
+
+func (s *Skeleton) RegisterCommand(name string, help string, f interface{}) {
+	console.Register(name, help, f, s.commandServer)
 }
