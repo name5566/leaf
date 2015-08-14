@@ -6,7 +6,7 @@ var (
 	LogLevel string
 	LogPath  string
 
-	ConsolePort   int    = 23
+	ConsolePort   int
 	ConsolePrompt string = "Leaf# "
 	ProfilePath   string
 )
