@@ -59,6 +59,9 @@ func (a *Agent) Run() {
 		if len(args) == 0 {
 			continue
 		}
+		if args[0] == "quit" {
+			break
+		}
 		var c Command
 		for _, _c := range commands {
 			if _c.name() == args[0] {

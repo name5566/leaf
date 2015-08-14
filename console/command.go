@@ -84,17 +84,15 @@ func (c *CommandHelp) name() string {
 }
 
 func (c *CommandHelp) help() string {
-	return "This help text"
+	return "this help text"
 }
 
 func (c *CommandHelp) run([]string) string {
 	output := "Commands:\r\n"
-	for i, c := range commands {
-		output += c.name() + " - " + c.help()
-		if i < len(commands)-1 {
-			output += "\r\n"
-		}
+	for _, c := range commands {
+		output += c.name() + " - " + c.help() + "\r\n"
 	}
+	output += "quit - exit console"
 
 	return output
 }
@@ -164,7 +162,7 @@ func (c *CommandProf) name() string {
 }
 
 func (c *CommandProf) help() string {
-	return "Writes a pprof-formatted snapshot"
+	return "writes a pprof-formatted snapshot"
 }
 
 func (c *CommandProf) usage() string {
