@@ -55,13 +55,13 @@ func (a *Agent) Run() {
 		}
 		line = strings.TrimSuffix(line[:len(line)-1], "\r")
 
-		arg := strings.Fields(line)
-		if len(arg) == 0 {
+		args := strings.Fields(line)
+		if len(args) == 0 {
 			continue
 		}
 		var c Command
 		for _, _c := range commands {
-			if _c.name() == arg[0] {
+			if _c.name() == args[0] {
 				c = _c
 				break
 			}
@@ -70,7 +70,7 @@ func (a *Agent) Run() {
 			a.conn.Write([]byte("command not found, try `help` for help\r\n"))
 			continue
 		}
-		output := c.run(arg[1:])
+		output := c.run(args[1:])
 		if output != "" {
 			a.conn.Write([]byte(output + "\r\n"))
 		}

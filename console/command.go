@@ -23,7 +23,7 @@ type Command interface {
 	// must goroutine safe
 	help() string
 	// must goroutine safe
-	run(arg []string) string
+	run(args []string) string
 }
 
 type ExternalCommand struct {
@@ -40,13 +40,13 @@ func (c *ExternalCommand) help() string {
 	return c._help
 }
 
-func (c *ExternalCommand) run(_arg []string) string {
-	arg := make([]interface{}, len(_arg))
-	for i, v := range _arg {
-		arg[i] = v
+func (c *ExternalCommand) run(_args []string) string {
+	args := make([]interface{}, len(_args))
+	for i, v := range _args {
+		args[i] = v
 	}
 
-	ret, err := c.server.Open(0).Call1(c._name, arg...)
+	ret, err := c.server.Open(0).Call1(c._name, args...)
 	if err != nil {
 		return err.Error()
 	}
@@ -85,7 +85,7 @@ func (c *CommandHelp) help() string {
 	return "This help text"
 }
 
-func (c *CommandHelp) run(arg []string) string {
+func (c *CommandHelp) run([]string) string {
 	output := "Commands:\r\n"
 	for i, c := range commands {
 		output += c.name() + " - " + c.help()
@@ -116,12 +116,12 @@ func (c *CommandCPUProf) usage() string {
 		"  stop  - stops the current CPU profile"
 }
 
-func (c *CommandCPUProf) run(arg []string) string {
-	if len(arg) == 0 {
+func (c *CommandCPUProf) run(args []string) string {
+	if len(args) == 0 {
 		return c.usage()
 	}
 
-	switch arg[0] {
+	switch args[0] {
 	case "start":
 		fn := profileName() + ".cpuprof"
 		f, err := os.Create(fn)
@@ -175,8 +175,8 @@ func (c *CommandProf) usage() string {
 		"  block     - stack traces that led to blocking on synchronization primitives"
 }
 
-func (c *CommandProf) run(arg []string) string {
-	if len(arg) == 0 {
+func (c *CommandProf) run(args []string) string {
+	if len(args) == 0 {
 		return c.usage()
 	}
 
@@ -184,7 +184,7 @@ func (c *CommandProf) run(arg []string) string {
 		p  *pprof.Profile
 		fn string
 	)
-	switch arg[0] {
+	switch args[0] {
 	case "goroutine":
 		p = pprof.Lookup("goroutine")
 		fn = profileName() + ".gprof"
