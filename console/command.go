@@ -2,7 +2,9 @@ package console
 
 import (
 	"fmt"
+	"github.com/name5566/leaf/chanrpc"
 	"github.com/name5566/leaf/conf"
+	"github.com/name5566/leaf/log"
 	"os"
 	"path"
 	"runtime/pprof"
@@ -22,6 +24,54 @@ type Command interface {
 	help() string
 	// must goroutine safe
 	run(arg []string) string
+}
+
+type ExternalCommand struct {
+	_name  string
+	_help  string
+	server *chanrpc.Server
+}
+
+func (c *ExternalCommand) name() string {
+	return c._name
+}
+
+func (c *ExternalCommand) help() string {
+	return c._help
+}
+
+func (c *ExternalCommand) run(_arg []string) string {
+	arg := make([]interface{}, len(_arg))
+	for i, v := range _arg {
+		arg[i] = v
+	}
+
+	ret, err := c.server.Open(0).Call1(c._name, arg...)
+	if err != nil {
+		return err.Error()
+	}
+	output, ok := ret.(string)
+	if !ok {
+		return "invalid output type"
+	}
+
+	return output
+}
+
+// you must call the function before calling console.Init
+// goroutine not safe
+func Register(name, help string, server *chanrpc.Server) {
+	for _, c := range commands {
+		if c.name() == name {
+			log.Fatal("command %v is already registered", name)
+		}
+	}
+
+	c := new(ExternalCommand)
+	c._name = name
+	c._help = help
+	c.server = server
+	commands = append(commands, c)
 }
 
 // help
