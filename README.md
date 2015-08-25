@@ -2,6 +2,14 @@ Leaf
 ====
 A pragmatic game server framework.
 
+Features
+---------
+
+* Extremely easy to use
+* Reliable
+* Multicore support
+* Modularity
+
 Documentation
 ---------
 
