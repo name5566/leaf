@@ -2,6 +2,12 @@ Leaf
 ====
 A pragmatic game server framework.
 
+Documentation
+---------
+
+* [中文文档](https://github.com/name5566/leaf/blob/master/TUTORIAL_ZH.md)
+* [English](https://github.com/name5566/leaf/blob/master/TUTORIAL_EN.md)
+
 Licensing
 ---------
 
