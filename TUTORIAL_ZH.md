@@ -38,9 +38,7 @@ type Module interface {
 }
 ```
 
-Leaf 首先会在同一个 goroutine 中按模块注册顺序执行模块的 OnInit 方法，等到所有模块 OnInit 方法执行完成后则
-为每一个模块启动一个 goroutine 并执行模块的 Run 方法。最后，游戏服务器关闭时（Ctrl + C 关闭游戏服务器）
-将按模块注册相反顺序在同一个 goroutine 中执行模块的 OnDestroy 方法。
+Leaf 首先会在同一个 goroutine 中按模块注册顺序执行模块的 OnInit 方法，等到所有模块 OnInit 方法执行完成后则为每一个模块启动一个 goroutine 并执行模块的 Run 方法。最后，游戏服务器关闭时（Ctrl + C 关闭游戏服务器）将按模块注册相反顺序在同一个 goroutine 中执行模块的 OnDestroy 方法。
 
 Leaf 源码概览
 ---------------
@@ -50,13 +48,37 @@ Leaf 源码概览
 * leaf/gate 网关模块，负责游戏客户端的接入
 * leaf/go 用于创建能够被 Leaf 管理的 goroutine
 * leaf/log 日志相关
-* leaf/network 网络相关，使用 TCP 协议，可自定义消息格式，目前 Leaf 提供了
-基于 [protobuf](https://developers.google.com/protocol-buffers) 和 JSON 的消息格式
+* leaf/network 网络相关，使用 TCP 协议，可自定义消息格式，目前 Leaf 提供了基于 [protobuf](https://developers.google.com/protocol-buffers) 和 JSON 的消息格式
 * leaf/recordfile 用于管理游戏数据
 * leaf/timer 定时器相关
-* leaf/util 辅助函数库
+* leaf/util 辅助库
 
 使用 Leaf 开发游戏服务器
 ---------------
 
 [LeafServer](https://github.com/name5566/leafserver) 是一个基于 Leaf 开发的游戏服务器，我们以 LeafServer 作为起点。
+
+获取 LeafServer
+
+```
+git clone https://github.com/name5566/leafserver
+```
+
+设置 leafserver 目录到 GOPATH 后获取相关依赖：
+
+```
+go get github.com/name5566/leaf
+go get github.com/golang/protobuf/proto
+```
+
+编译 LeafServer：
+
+```
+go install server
+```
+
+如果一切顺利，运行 server 你可以获得以下输出：
+
+```
+2015/08/26 22:11:27 [release] Leaf starting up
+```
