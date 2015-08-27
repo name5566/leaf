@@ -234,8 +234,157 @@ func main() {
 }
 ```
 
-执行此测试客户端，服务器输出：
+执行此测试客户端，游戏服务器输出：
 
 ```
 2015/08/26 23:26:23 [debug  ] hello leaf
 ```
+
+### Leaf 模块详解
+
+LeafServer 中包含了 3 个模块，它们分别是：
+
+* gate 模块，负责游戏客户端的接入
+* login 模块，负责登录流程
+* game 模块，负责游戏主逻辑
+
+一般来说（而非强制规定），从代码结构上，一个 Leaf 模块：
+
+1. 放置于一个目录中（例如 game 模块放置于 game 目录中）
+2. 模块的具体实现放置于 internal 包中（例如 game 模块的具体实现放置于 game/internal 包中）
+
+每个模块下一般有一个 external.go 的文件，顾名思义表示模块对外暴露的接口，这里以 game 模块的 external.go 文件为例：
+
+```go
+package game
+
+import (
+	"server/game/internal"
+)
+
+var (
+	// 实例化 game 模块
+	Module  = new(internal.Module)
+	// 暴露 ChanRPC
+	ChanRPC = internal.ChanRPC
+)
+```
+
+首先，模块会被实例化，这样才能注册到 Leaf 框架中（详见 LeafServer main.go），另外，模块暴露的 ChanRPC 被用于模块间通讯。
+
+进入 game 模块的内部（LeafServer game/internal/module.go）：
+
+```go
+package internal
+
+import (
+	"github.com/name5566/leaf/module"
+	"server/base"
+)
+
+var (
+	skeleton = base.NewSkeleton()
+	ChanRPC  = skeleton.ChanRPCServer
+)
+
+type Module struct {
+	*module.Skeleton
+}
+
+func (m *Module) OnInit() {
+	m.Skeleton = skeleton
+}
+
+func (m *Module) OnDestroy() {
+
+}
+```
+
+模块中最关键的就是 skeleton（骨架），skeleton 实现了 Module 接口的 Run 方法并提供了：
+
+* ChanRPC
+* goroutine
+* 定时器
+
+### Leaf ChanRPC
+
+由于 Leaf 中，每个模块跑在独立的 goroutine 上，为了模块间方便的相互调用就有了基于 channel 的 RPC 机制。一个 ChanRPC 需要在游戏服务器初始化的时候进行注册（注册过程不是 goroutine 安全的），例如 LeafServer 中 game 模块注册了 NewAgent 和 CloseAgent 两个 ChanRPC：
+
+```go
+package internal
+
+import (
+	"github.com/name5566/leaf/gate"
+)
+
+func init() {
+	skeleton.RegisterChanRPC("NewAgent", rpcNewAgent)
+	skeleton.RegisterChanRPC("CloseAgent", rpcCloseAgent)
+}
+
+func rpcNewAgent(args []interface{}) {
+
+}
+
+func rpcCloseAgent(args []interface{}) {
+
+}
+```
+
+使用 skeleton 来注册 ChanRPC。RegisterChanRPC 的第一个参数是 ChanRPC 的名字，第二个参数是 ChanRPC 的实现。这里的 NewAgent 和 CloseAgent 会被 LeafServer 的 gate 模块在连接建立和连接中断时调用。ChanRPC 的调用方有 3 种调用模式：
+
+1. 同步模式，调用并等待 ChanRPC 返回
+2. 异步模式，调用并提供回调函数，回调函数会在 ChanRPC 返回后被调用
+3. Go 模式，调用并立即返回，忽略任何返回值和错误
+
+gate 模块这样调用 game 模块的 NewAgent ChanRPC（这仅仅是一个示例，实际的代码细节复杂的多）：
+
+```go
+game.ChanRPC.Go("NewAgent", a)
+```
+
+这里调用 NewAgent 并传递参数 a，我们在 rpcNewAgent 的参数 args[0] 中可以取到 a（args[1] 表示第二个参数，以此类推）。
+
+更加详细的用法可以参考 [leaf/chanrpc](https://github.com/name5566/leaf/blob/master/chanrpc)。需要注意的是，无论封装多么精巧，跨 goroutine 的调用总不能像直接的函数调用那样简单直接，因此除非必要我们不要构建太多的模块，模块间不要太频繁的交互。模块在 Leaf 中被设计出来最主要是用于划分功能而非利用多核，Leaf 认为在模块内按需使用 goroutine 才是多核利用率问题的解决之道。
+
+### Leaf Go
+
+善用 goroutine 能够充分利用多核资源，Leaf 提供的 Go 机制解决了原生 goroutine 存在的一些问题：
+
+* 能够恢复 goroutine 运行过程中的错误
+* 游戏服务器会等待所有 goroutine 执行结束后才关闭
+* 非常方便的获取 goroutine 执行的结果数据
+* 在一些特殊场合保证 goroutine 按创建顺序执行
+
+我们来看一个例子（可以在 LeafServer 的模块的 OnInit 方法中测试）：
+
+```go
+log.Debug("1")
+
+// 定义变量 res 接收结果
+var res string
+
+skeleton.Go(func() {
+	// 这里使用 Sleep 来模拟一个很慢的操作
+	time.Sleep(1 * time.Second)
+
+	// 假定得到结果
+	res = "3"
+}, func() {
+	log.Debug(res)
+})
+
+log.Debug("2")
+```
+
+上面代码执行结果如下：
+
+```go
+2015/08/27 20:37:17 [debug  ] 1
+2015/08/27 20:37:17 [debug  ] 2
+2015/08/27 20:37:18 [debug  ] 3
+```
+
+这里的 Go 方法接收 2 个函数作为参数，第一个函数会被放置在一个新创建的 goroutine 中执行，在其执行完成之后，第二个函数会在当前 goroutine 中被执行。由此，我们可以看到变量 res 同一时刻总是只被一个 goroutine 访问，这就避免了同步机制的使用。Go 的设计使得 CPU 得到充分利用，避免操作阻塞当前 goroutine，同时又无需为共享资源同步而忧心。
+
+更加详细的用法可以参考 [leaf/go](https://github.com/name5566/leaf/blob/master/go)。
