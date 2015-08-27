@@ -119,7 +119,7 @@ func init() {
 ```go
 func init() {
 	// 这里我们注册了一个 JSON 消息 Hello
-	// 我们也可以使用 ProtobufProcessor 注册 protobuf 消息
+	// 我们也可以使用 ProtobufProcessor 注册 protobuf 消息（同时注意修改配置文件 conf/conf.go 中的 Encoding）
 	JSONProcessor.Register(&Hello{})
 }
 
@@ -187,9 +187,11 @@ func handleHello(args []interface{}) {
 
 Leaf 中，在网络中传输的消息都会使用以下格式：
 
+```
 --------------
 | len | data |
 --------------
+```
 
 其中：
 
