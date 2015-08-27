@@ -58,7 +58,7 @@ Leaf 源码概览
 
 [LeafServer](https://github.com/name5566/leafserver) 是一个基于 Leaf 开发的游戏服务器，我们以 LeafServer 作为起点。
 
-获取 LeafServer
+获取 LeafServer：
 
 ```
 git clone https://github.com/name5566/leafserver
@@ -69,6 +69,7 @@ git clone https://github.com/name5566/leafserver
 ```
 go get github.com/name5566/leaf
 go get github.com/golang/protobuf/proto
+go get gopkg.in/mgo.v2
 ```
 
 编译 LeafServer：
@@ -81,4 +82,158 @@ go install server
 
 ```
 2015/08/26 22:11:27 [release] Leaf starting up
+```
+
+敲击 Ctrl + C 关闭游戏服务器，服务器正常关闭输出：
+
+```
+2015/08/26 22:12:30 [release] Leaf closing down (signal: interrupt)
+```
+
+### Hello Leaf
+
+现在，在 LeafServer 的基础上，我们来看看游戏服务器如何接收和处理网络消息。
+
+首先定义一个 JSON 格式的消息（protobuf 类似）。打开 LeafServer msg/msg.go 文件可以看到如下代码：
+
+```go
+package msg
+
+import (
+	"github.com/name5566/leaf/network/json"
+	"github.com/name5566/leaf/network/protobuf"
+)
+
+var (
+	JSONProcessor     = json.NewProcessor()
+	ProtobufProcessor = protobuf.NewProcessor()
+)
+
+func init() {
+
+}
+```
+
+我们尝试添加一个名字为 Hello 的消息（msg/msg.go 文件中未改动部分这里略去）：
+
+```go
+func init() {
+	// 这里我们注册了一个 JSON 消息 Hello
+	// 我们也可以使用 ProtobufProcessor 注册 protobuf 消息
+	JSONProcessor.Register(&Hello{})
+}
+
+// 一个结构体定义了一个 JSON 消息的格式
+// 消息名为 Hello
+type Hello struct {
+	Name string
+}
+```
+
+客户端发送到游戏服务器的消息需要通过 gate 模块路由，简而言之，gate 模块决定了某个消息具体交给内部的哪个模块来处理。这里，我们将 Hello 消息路由到 game 模块中。打开 LeafServer gate/router.go，敲入如下代码：
+
+```go
+package gate
+
+import (
+	"server/game"
+	"server/msg"
+)
+
+func init() {
+	// 这里指定消息 Hello 路由到 game 模块
+	// 模块间使用 ChanRPC 通讯，消息路由也不例外
+	msg.JSONProcessor.SetRouter(&msg.Hello{}, game.ChanRPC)
+}
+```
+
+一切就绪，我们现在可以在 game 模块中处理 Hello 消息了。打开 LeafServer game/internal/handler.go，敲入如下代码：
+
+```go
+package internal
+
+import (
+	"github.com/name5566/leaf/log"
+	"reflect"
+	"server/msg"
+)
+
+func init() {
+	// 向当前模块（game 模块）注册 Hello 消息的消息处理函数 handleHello
+	handler(&msg.Hello{}, handleHello)
+}
+
+func handler(m interface{}, h interface{}) {
+	skeleton.RegisterChanRPC(reflect.TypeOf(m), h)
+}
+
+func handleHello(args []interface{}) {
+	// 收到的 Hello 消息
+	m := args[0].(*msg.Hello)
+	// 消息的发送者
+	a := args[1].(gate.Agent)
+
+	// 输出收到的消息的内容
+	log.Debug("hello %v", m.Name)
+
+	// 给发送者回应一个 Hello 消息
+	a.WriteMsg(&msg.Hello{
+		Name: "client",
+	})
+}
+```
+
+到这里，一个简单的范例就完成了。为了更加清楚的了解消息的格式，我们从 0 编写一个最简单的测试客户端。
+
+Leaf 中，在网络中传输的消息都会使用以下格式：
+
+--------------
+| len | data |
+--------------
+
+其中：
+
+1. len 表示了 data 部分的长度（字节数）。len 本身也有长度，默认为 2 字节（可配置），len 本身的长度决定了单个消息的最大大小
+2. data 部分使用 JSON 或者 protobuf 编码（也可自定义其他编码方式）
+
+测试客户端同样使用 Go 语言编写：
+```go
+package main
+
+import (
+	"encoding/binary"
+	"net"
+)
+
+func main() {
+	conn, err := net.Dial("tcp", "127.0.0.1:3563")
+	if err != nil {
+		panic(err)
+	}
+
+	// Hello 消息（JSON 格式）
+	// 对应游戏服务器 Hello 消息结构体
+	data := []byte(`{
+		"Hello": {
+			"Name": "leaf"
+		}
+	}`)
+
+	// len + data
+	m := make([]byte, 2+len(data))
+
+	// 默认使用大端序
+	binary.BigEndian.PutUint16(m, uint16(len(data)))
+
+	copy(m[2:], data)
+
+	// 发送消息
+	conn.Write(m)
+}
+```
+
+执行此测试客户端，服务器输出：
+
+```
+2015/08/26 23:26:23 [debug  ] hello leaf
 ```
