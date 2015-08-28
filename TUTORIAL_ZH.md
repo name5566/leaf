@@ -388,3 +388,86 @@ log.Debug("2")
 这里的 Go 方法接收 2 个函数作为参数，第一个函数会被放置在一个新创建的 goroutine 中执行，在其执行完成之后，第二个函数会在当前 goroutine 中被执行。由此，我们可以看到变量 res 同一时刻总是只被一个 goroutine 访问，这就避免了同步机制的使用。Go 的设计使得 CPU 得到充分利用，避免操作阻塞当前 goroutine，同时又无需为共享资源同步而忧心。
 
 更加详细的用法可以参考 [leaf/go](https://github.com/name5566/leaf/blob/master/go)。
+
+### Leaf timer
+
+Go 语言标准库提供了定时器的支持：
+
+```go
+func AfterFunc(d Duration, f func()) *Timer
+```
+
+AfterFunc 会等待 d 时长后调用 f 函数，这里的 f 函数将在另外一个 goroutine 中执行。Leaf 提供了一个相同的 AfterFunc 函数，相比之下，f 函数在 AfterFunc 的调用 goroutine 中执行，这样就避免了同步机制的使用：
+
+```go
+skeleton.AfterFunc(5 * time.Second, func() {
+	// ...
+})
+```
+
+另外，Leaf timer 还支持 [cron 表达式](https://en.wikipedia.org/wiki/Cron)，用于实现诸如“每天 9 点执行”、“每周末 6 点执行”的逻辑。
+
+更加详细的用法可以参考 [leaf/timer](https://github.com/name5566/leaf/blob/master/timer)。
+
+### Leaf log
+
+Leaf 的 log 系统支持多种日志级别：
+
+1. Debug 日志，非关键日志
+2. Release 日志，关键日志
+3. Error 日志，错误日志
+4. Fatal 日志，致命错误日志
+
+Debug < Release < Error < Fatal（日志级别高低）
+
+在 LeafServer 中，bin/conf/server.json 可以配置日志级别，低于配置的日志级别的日志将不会输出。Fatal 日志比较特殊，每次输出 Fatal 日志之后游戏服务器进程就会结束，通常来说，只在游戏服务器初始化失败时使用 Fatal 日志。
+
+更加详细的用法可以参考 [leaf/log](https://github.com/name5566/leaf/blob/master/log)。
+
+### Leaf recordfile
+
+Leaf 的 recordfile 是基于 CSV 格式（范例见[这里](https://github.com/name5566/leaf/blob/master/recordfile/test.txt)）。recordfile 用于管理游戏配置数据。在 LeafServer 中使用 recordfile 非常简单：
+
+1. 将 CSV 文件放置于 bin/gamedata 目录中
+2. 在 gamedata 模块中调用函数 readRf 读取 CSV 文件
+
+范例：
+
+```go
+// 确保 bin/gamedata 目录中存在 Test.txt 文件
+// 文件名必须和此结构体名称相同（大小写敏感）
+// 结构体的一个实例映射 recordfile 中的一行
+type Test struct {
+	// 将第一列按 int 类型解析
+	// "index" 表明在此列上建立唯一索引
+	Id  int "index"
+	// 将第二列解析为长度为 4 的整型数组
+	Arr [4]int
+	// 将第三列解析为字符串
+	Str string
+}
+
+// 读取 recordfile Test.txt 到内存中
+// RfTest 即为 Test.txt 的内存镜像
+var RfTest = readRf(Test{})
+
+func init() {
+	// 按索引查找
+	// 获取 Test.txt 中 Id 为 1 的那一行
+	r := RfTest.Index(1)
+
+	if r != nil {
+		row := r.(*Test)
+
+		// 输出此行的所有列的数据
+		log.Debug("%v %v %v", row.Id, row.Arr, row.Str)
+	}
+}
+```
+
+更加详细的用法可以参考 [leaf/recordfile](https://github.com/name5566/leaf/blob/master/recordfile)。
+
+写在最后的话
+---------------
+
+本文虽然未能全面描述 Leaf 服务器框架的方方面面，但整体轮廓已经显现。Leaf 尚小，但已经足够构建一个完整游戏服务器。在对开发效率的执着追求上，Leaf 还有很长的路需要走。最后，欢迎各位勇士跳坑。
