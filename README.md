@@ -10,6 +10,11 @@ Features
 * Multicore support
 * Modularity
 
+Community
+---------
+
+* QQ 群：376389675
+
 Documentation
 ---------
 
