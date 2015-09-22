@@ -14,6 +14,7 @@ Community
 ---------
 
 * QQ 群：376389675
+* Wiki：[https://github.com/name5566/leaf/wiki](https://github.com/name5566/leaf/wiki)
 
 Documentation
 ---------
