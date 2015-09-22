@@ -40,6 +40,7 @@ func New(st interface{}) (*RecordFile, error) {
 		case reflect.Int16:
 		case reflect.Int32:
 		case reflect.Int64:
+		case reflect.Uint:
 		case reflect.Uint8:
 		case reflect.Uint16:
 		case reflect.Uint32:
@@ -139,6 +140,7 @@ func (rf *RecordFile) Read(name string) error {
 					field.SetBool(v)
 				}
 			} else if kind == reflect.Int ||
+				kind == reflect.Int8 ||
 				kind == reflect.Int16 ||
 				kind == reflect.Int32 ||
 				kind == reflect.Int64 {
@@ -147,7 +149,8 @@ func (rf *RecordFile) Read(name string) error {
 				if err == nil {
 					field.SetInt(v)
 				}
-			} else if kind == reflect.Uint8 ||
+			} else if kind == reflect.Uint ||
+				kind == reflect.Uint8 ||
 				kind == reflect.Uint16 ||
 				kind == reflect.Uint32 ||
 				kind == reflect.Uint64 {
