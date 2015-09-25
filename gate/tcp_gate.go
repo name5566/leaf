@@ -61,7 +61,7 @@ func (a *TCPAgent) Run() {
 	for {
 		data, err := a.conn.ReadMsg()
 		if err != nil {
-			log.Debug("read message error: %v", err)
+			log.Debug("read message: %v", err)
 			break
 		}
 

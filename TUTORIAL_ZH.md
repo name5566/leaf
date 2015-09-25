@@ -238,8 +238,11 @@ func main() {
 执行此测试客户端，游戏服务器输出：
 
 ```
-2015/08/26 23:26:23 [debug  ] hello leaf
+2015/09/25 07:41:03 [debug  ] hello leaf
+2015/09/25 07:41:03 [debug  ] read message: read tcp 127.0.0.1:3563->127.0.0.1:54599: wsarecv: An existing connection was forcibly closed by the remote host.
 ```
+
+测试客户端发送完消息以后就退出了，此时和游戏服务器的连接断开，相应的，游戏服务器输出连接断开的提示日志（第二条日志，日志的具体内容和 Go 语言版本有关）。
 
 ### Leaf 模块详解
 
