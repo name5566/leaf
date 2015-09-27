@@ -6,6 +6,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"sync"
+	"time"
 )
 
 // session
@@ -52,15 +53,23 @@ type DialContext struct {
 
 // goroutine safe
 func Dial(url string, sessionNum int) (*DialContext, error) {
+	c, err := DialWithTimeout(url, sessionNum, 10*time.Second, 5*time.Minute)
+	return c, err
+}
+
+// goroutine safe
+func DialWithTimeout(url string, sessionNum int, dialTimeout time.Duration, timeout time.Duration) (*DialContext, error) {
 	if sessionNum <= 0 {
 		sessionNum = 100
 		log.Release("invalid sessionNum, reset to %v", sessionNum)
 	}
 
-	s, err := mgo.Dial(url)
+	s, err := mgo.DialWithTimeout(url, dialTimeout)
 	if err != nil {
 		return nil, err
 	}
+	s.SetSyncTimeout(timeout)
+	s.SetSocketTimeout(timeout)
 
 	c := new(DialContext)
 
