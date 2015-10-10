@@ -1,6 +1,7 @@
 package leaf
 
 import (
+	"github.com/name5566/leaf/cluster"
 	"github.com/name5566/leaf/conf"
 	"github.com/name5566/leaf/console"
 	"github.com/name5566/leaf/log"
@@ -28,6 +29,9 @@ func Run(mods ...module.Module) {
 	}
 	module.Init()
 
+	// cluster
+	cluster.Init()
+
 	// console
 	console.Init()
 
@@ -37,5 +41,6 @@ func Run(mods ...module.Module) {
 	sig := <-c
 	log.Release("Leaf closing down (signal: %v)", sig)
 	console.Destroy()
+	cluster.Destroy()
 	module.Destroy()
 }
