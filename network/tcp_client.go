@@ -117,7 +117,7 @@ func (client *TCPClient) Close() {
 	client.Lock()
 	client.closeFlag = true
 	if client.conns != nil {
-		for conn, _ := range client.conns {
+		for conn := range client.conns {
 			conn.Close()
 		}
 		client.conns = nil

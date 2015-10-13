@@ -105,7 +105,7 @@ func (server *TCPServer) Close() {
 	server.ln.Close()
 
 	server.mutexConns.Lock()
-	for conn, _ := range server.conns {
+	for conn := range server.conns {
 		conn.Close()
 	}
 	server.conns = make(ConnSet)
