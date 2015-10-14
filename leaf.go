@@ -21,7 +21,7 @@ func Run(mods ...module.Module) {
 		defer logger.Close()
 	}
 
-	log.Release("Leaf starting up")
+	log.Release("Leaf %v starting up", version)
 
 	// module
 	for i := 0; i < len(mods); i++ {
