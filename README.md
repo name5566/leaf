@@ -1,6 +1,6 @@
 Leaf
 ====
-A pragmatic game server framework.
+A pragmatic game server framework in Go (golang).
 
 Features
 ---------
