@@ -14,7 +14,8 @@ type TCPServer struct {
 	ln              net.Listener
 	conns           ConnSet
 	mutexConns      sync.Mutex
-	wg              sync.WaitGroup
+	wgLn            sync.WaitGroup
+	wgConns         sync.WaitGroup
 
 	// msg parser
 	LenMsgLen    int
@@ -58,6 +59,9 @@ func (server *TCPServer) init() {
 }
 
 func (server *TCPServer) run() {
+	server.wgLn.Add(1)
+	defer server.wgLn.Done()
+
 	for {
 		conn, err := server.ln.Accept()
 		if err != nil {
@@ -74,7 +78,7 @@ func (server *TCPServer) run() {
 		server.conns[conn] = struct{}{}
 		server.mutexConns.Unlock()
 
-		server.wg.Add(1)
+		server.wgConns.Add(1)
 
 		tcpConn := newTCPConn(conn, server.PendingWriteNum, server.msgParser)
 		agent := server.NewAgent(tcpConn)
@@ -88,20 +92,20 @@ func (server *TCPServer) run() {
 			server.mutexConns.Unlock()
 			agent.OnClose()
 
-			server.wg.Done()
+			server.wgConns.Done()
 		}()
 	}
 }
 
 func (server *TCPServer) Close() {
 	server.ln.Close()
+	server.wgLn.Wait()
 
 	server.mutexConns.Lock()
 	for conn := range server.conns {
 		conn.Close()
 	}
-	server.conns = make(ConnSet)
+	server.conns = nil
 	server.mutexConns.Unlock()
-
-	server.wg.Wait()
+	server.wgConns.Wait()
 }
