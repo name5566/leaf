@@ -15,7 +15,6 @@ type TCPServer struct {
 	conns           ConnSet
 	mutexConns      sync.Mutex
 	wg              sync.WaitGroup
-	closeFlag       bool
 
 	// msg parser
 	LenMsgLen    int
@@ -50,7 +49,6 @@ func (server *TCPServer) init() {
 
 	server.ln = ln
 	server.conns = make(ConnSet)
-	server.closeFlag = false
 
 	// msg parser
 	msgParser := NewMsgParser()
@@ -63,12 +61,7 @@ func (server *TCPServer) run() {
 	for {
 		conn, err := server.ln.Accept()
 		if err != nil {
-			if server.closeFlag {
-				return
-			} else {
-				log.Error("accept error: %v", err)
-				continue
-			}
+			return
 		}
 
 		server.mutexConns.Lock()
@@ -101,7 +94,6 @@ func (server *TCPServer) run() {
 }
 
 func (server *TCPServer) Close() {
-	server.closeFlag = true
 	server.ln.Close()
 
 	server.mutexConns.Lock()
