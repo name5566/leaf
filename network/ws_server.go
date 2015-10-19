@@ -38,6 +38,24 @@ func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Debug("upgrade error: %v", err)
 		return
 	}
+
+	handler.wg.Add(1)
+	defer handler.wg.Done()
+
+	handler.mutexConns.Lock()
+	if handler.conns == nil {
+		handler.mutexConns.Unlock()
+		conn.Close()
+		return
+	}
+	if len(handler.conns) >= handler.maxConnNum {
+		handler.mutexConns.Unlock()
+		conn.Close()
+		log.Debug("too many connections")
+		return
+	}
+	handler.conns[conn] = struct{}{}
+	handler.mutexConns.Unlock()
 }
 
 func (server *WSServer) Start() {
