@@ -86,16 +86,17 @@ func (client *TCPClient) connect() {
 		return
 	}
 
+	client.wg.Add(1)
+	defer client.wg.Done()
+
 	client.Lock()
 	if client.closeFlag {
-		conn.Close()
 		client.Unlock()
+		conn.Close()
 		return
 	}
 	client.conns[conn] = struct{}{}
 	client.Unlock()
-
-	client.wg.Add(1)
 
 	tcpConn := newTCPConn(conn, client.PendingWriteNum, client.msgParser)
 	agent := client.NewAgent(tcpConn)
@@ -107,8 +108,6 @@ func (client *TCPClient) connect() {
 	delete(client.conns, conn)
 	client.Unlock()
 	agent.OnClose()
-
-	client.wg.Done()
 }
 
 func (client *TCPClient) Close() {
