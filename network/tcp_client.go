@@ -104,9 +104,7 @@ func (client *TCPClient) connect() {
 	// cleanup
 	tcpConn.Close()
 	client.Lock()
-	if client.conns != nil {
-		delete(client.conns, conn)
-	}
+	delete(client.conns, conn)
 	client.Unlock()
 	agent.OnClose()
 
@@ -116,12 +114,10 @@ func (client *TCPClient) connect() {
 func (client *TCPClient) Close() {
 	client.Lock()
 	client.closeFlag = true
-	if client.conns != nil {
-		for conn := range client.conns {
-			conn.Close()
-		}
-		client.conns = nil
+	for conn := range client.conns {
+		conn.Close()
 	}
+	client.conns = nil
 	client.Unlock()
 
 	client.wg.Wait()
