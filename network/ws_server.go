@@ -13,8 +13,9 @@ type WSServer struct {
 	Addr            string
 	MaxConnNum      int
 	PendingWriteNum int
-	NewAgent        func(*WSConn) Agent
+	MaxMsgLen       int
 	HTTPTimeout     time.Duration
+	NewAgent        func(*WSConn) Agent
 	ln              net.Listener
 	handler         *WSHandler
 }
@@ -22,6 +23,7 @@ type WSServer struct {
 type WSHandler struct {
 	maxConnNum      int
 	pendingWriteNum int
+	maxMsgLen       int
 	newAgent        func(*WSConn) Agent
 	upgrader        websocket.Upgrader
 	conns           WebsocketConnSet
@@ -39,6 +41,7 @@ func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Debug("upgrade error: %v", err)
 		return
 	}
+	conn.SetReadLimit(int64(handler.maxMsgLen))
 
 	handler.wg.Add(1)
 	defer handler.wg.Done()
@@ -84,18 +87,23 @@ func (server *WSServer) Start() {
 		server.PendingWriteNum = 100
 		log.Release("invalid PendingWriteNum, reset to %v", server.PendingWriteNum)
 	}
-	if server.NewAgent == nil {
-		log.Fatal("NewAgent must not be nil")
+	if server.MaxMsgLen <= 0 {
+		server.MaxMsgLen = 4096
+		log.Release("invalid MaxMsgLen, reset to %v", server.MaxMsgLen)
 	}
 	if server.HTTPTimeout <= 0 {
 		server.HTTPTimeout = 10 * time.Second
 		log.Release("invalid HTTPTimeout, reset to %v", server.HTTPTimeout)
+	}
+	if server.NewAgent == nil {
+		log.Fatal("NewAgent must not be nil")
 	}
 
 	server.ln = ln
 	server.handler = &WSHandler{
 		maxConnNum:      server.MaxConnNum,
 		pendingWriteNum: server.PendingWriteNum,
+		maxMsgLen:       server.MaxMsgLen,
 		newAgent:        server.NewAgent,
 		conns:           make(WebsocketConnSet),
 		upgrader: websocket.Upgrader{
