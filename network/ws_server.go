@@ -22,6 +22,7 @@ type WSServer struct {
 type WSHandler struct {
 	maxConnNum      int
 	pendingWriteNum int
+	newAgent        func(*WSConn) Agent
 	upgrader        websocket.Upgrader
 	conns           WebsocketConnSet
 	mutexConns      sync.Mutex
@@ -56,6 +57,17 @@ func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	handler.conns[conn] = struct{}{}
 	handler.mutexConns.Unlock()
+
+	wsConn := newWSConn(conn, handler.pendingWriteNum)
+	agent := handler.newAgent(wsConn)
+	agent.Run()
+
+	// cleanup
+	wsConn.Close()
+	handler.mutexConns.Lock()
+	delete(handler.conns, conn)
+	handler.mutexConns.Unlock()
+	agent.OnClose()
 }
 
 func (server *WSServer) Start() {
@@ -84,6 +96,7 @@ func (server *WSServer) Start() {
 	server.handler = &WSHandler{
 		maxConnNum:      server.MaxConnNum,
 		pendingWriteNum: server.PendingWriteNum,
+		newAgent:        server.NewAgent,
 		conns:           make(WebsocketConnSet),
 		upgrader: websocket.Upgrader{
 			HandshakeTimeout: server.HTTPTimeout,
