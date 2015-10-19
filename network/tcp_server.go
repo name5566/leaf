@@ -121,7 +121,7 @@ func (server *TCPServer) Close() {
 	for conn := range server.conns {
 		conn.Close()
 	}
-	server.conns = make(ConnSet)
+	server.conns = nil
 	server.mutexConns.Unlock()
 	server.wgConns.Wait()
 }
