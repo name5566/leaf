@@ -30,6 +30,7 @@ func (client *TCPClient) Start() {
 	client.init()
 
 	for i := 0; i < client.ConnNum; i++ {
+		client.wg.Add(1)
 		go client.connect()
 	}
 }
@@ -81,13 +82,12 @@ func (client *TCPClient) dial() net.Conn {
 }
 
 func (client *TCPClient) connect() {
+	defer client.wg.Done()
+
 	conn := client.dial()
 	if conn == nil {
 		return
 	}
-
-	client.wg.Add(1)
-	defer client.wg.Done()
 
 	client.Lock()
 	if client.closeFlag {
