@@ -13,7 +13,7 @@ type WSServer struct {
 	Addr            string
 	MaxConnNum      int
 	PendingWriteNum int
-	MaxMsgLen       int
+	MaxMsgLen       uint32
 	HTTPTimeout     time.Duration
 	NewAgent        func(*WSConn) Agent
 	ln              net.Listener
@@ -23,7 +23,7 @@ type WSServer struct {
 type WSHandler struct {
 	maxConnNum      int
 	pendingWriteNum int
-	maxMsgLen       int
+	maxMsgLen       uint32
 	newAgent        func(*WSConn) Agent
 	upgrader        websocket.Upgrader
 	conns           WebsocketConnSet

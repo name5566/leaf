@@ -13,7 +13,7 @@ type WSClient struct {
 	ConnNum          int
 	ConnectInterval  time.Duration
 	PendingWriteNum  int
-	MaxMsgLen        int
+	MaxMsgLen        uint32
 	HandshakeTimeout time.Duration
 	NewAgent         func(*WSConn) Agent
 	dialer           websocket.Dialer
