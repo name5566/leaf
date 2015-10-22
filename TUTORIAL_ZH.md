@@ -1,7 +1,9 @@
 Leaf 游戏服务器框架简介
 ==================
 
-Leaf 是一个开发效率和执行效率并重的开源游戏服务器框架。Leaf 的关注点：
+Leaf 是一个由 Go 语言（golang）编写的开发效率和执行效率并重的开源游戏服务器框架。Leaf 适用于各类游戏服务器的开发，包括 H5（HTML5）游戏服务器。
+
+Leaf 的关注点：
 
 * 良好的使用体验。Leaf 总是尽可能的提供简洁和易用的接口，尽可能的提升开发的效率
 * 稳定性。Leaf 总是尽可能的恢复运行过程中的错误，避免崩溃
@@ -48,7 +50,7 @@ Leaf 源码概览
 * leaf/gate 网关模块，负责游戏客户端的接入
 * leaf/go 用于创建能够被 Leaf 管理的 goroutine
 * leaf/log 日志相关
-* leaf/network 网络相关，使用 TCP 协议，可自定义消息格式，目前 Leaf 提供了基于 [protobuf](https://developers.google.com/protocol-buffers) 和 JSON 的消息格式
+* leaf/network 网络相关，使用 TCP 和 WebSocket 协议，可自定义消息格式，目前 Leaf 提供了基于 [protobuf](https://developers.google.com/protocol-buffers) 和 JSON 的消息格式
 * leaf/recordfile 用于管理游戏数据
 * leaf/timer 定时器相关
 * leaf/util 辅助库
@@ -69,6 +71,7 @@ git clone https://github.com/name5566/leafserver
 ```
 go get github.com/name5566/leaf
 go get github.com/golang/protobuf/proto
+go get github.com/gorilla/websocket
 go get gopkg.in/mgo.v2
 ```
 
@@ -186,7 +189,7 @@ func handleHello(args []interface{}) {
 
 到这里，一个简单的范例就完成了。为了更加清楚的了解消息的格式，我们从 0 编写一个最简单的测试客户端。
 
-Leaf 中，在网络中传输的消息都会使用以下格式：
+Leaf 中，当选择使用 TCP 协议时，在网络中传输的消息都会使用以下格式：
 
 ```
 --------------
@@ -243,6 +246,31 @@ func main() {
 ```
 
 测试客户端发送完消息以后就退出了，此时和游戏服务器的连接断开，相应的，游戏服务器输出连接断开的提示日志（第二条日志，日志的具体内容和 Go 语言版本有关）。
+
+除了使用 TCP 协议外，还可以选择使用 WebSocket 协议（例如开发 H5 游戏）。Leaf 可以单独使用 TCP 协议或 WebSocket 协议，也可以同时使用两者，换而言之，服务器可以同时接受 TCP 连接和 WebSocket 连接，对开发者而言消息来自 TCP 还是 WebSocket 是完全透明的。现在，我们来编写一个对应上例的使用 WebSocket 协议的客户端：
+```html
+<script type="text/javascript">
+var ws = new WebSocket('ws://127.0.0.1:3653')
+
+ws.onopen = function() {
+    // 发送 Hello 消息
+    ws.send(JSON.stringify({Hello: {
+        Name: 'leaf'
+    }}))
+}
+</script>
+```
+
+在 LeafServer 中，bin/conf/server.json 可以配置 WebSocket 监听地址（WSAddr）：
+```json
+{
+    "LogLevel": "debug",
+    "LogPath": "",
+    "TCPAddr": "127.0.0.1:3563",
+    "WSAddr": "127.0.0.1:3653",
+    "MaxConnNum": 20000
+}
+```
 
 ### Leaf 模块详解
 
