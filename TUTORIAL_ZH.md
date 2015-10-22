@@ -261,7 +261,7 @@ ws.onopen = function() {
 </script>
 ```
 
-在 LeafServer 中，bin/conf/server.json 可以配置 WebSocket 监听地址（WSAddr）：
+保存上述代码到某 HTML 文件中并使用（任意支持 WebSocket 协议的）浏览器打开。在打开此 HTML 文件前，首先需要配置一下 LeafServer 的 bin/conf/server.json 文件，增加 WebSocket 监听地址（WSAddr）：
 ```json
 {
     "LogLevel": "debug",
@@ -270,6 +270,12 @@ ws.onopen = function() {
     "WSAddr": "127.0.0.1:3653",
     "MaxConnNum": 20000
 }
+```
+
+重启游戏服务器后，方可接受 WebSocket 消息：
+
+```
+2015/09/25 07:50:03 [debug  ] hello leaf
 ```
 
 ### Leaf 模块详解
