@@ -278,6 +278,8 @@ ws.onopen = function() {
 2015/09/25 07:50:03 [debug  ] hello leaf
 ```
 
+在 Leaf 中使用 WebSocket 需要注意的一点是：Leaf 总是发送二进制消息而非文本消息。
+
 ### Leaf 模块详解
 
 LeafServer 中包含了 3 个模块，它们分别是：
