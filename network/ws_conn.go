@@ -13,13 +13,15 @@ type WSConn struct {
 	sync.Mutex
 	conn      *websocket.Conn
 	writeChan chan []byte
+	maxMsgLen uint32
 	closeFlag bool
 }
 
-func newWSConn(conn *websocket.Conn, pendingWriteNum int) *WSConn {
+func newWSConn(conn *websocket.Conn, pendingWriteNum int, maxMsgLen uint32) *WSConn {
 	wsConn := new(WSConn)
 	wsConn.conn = conn
 	wsConn.writeChan = make(chan []byte, pendingWriteNum)
+	wsConn.maxMsgLen = maxMsgLen
 
 	go func() {
 		for b := range wsConn.writeChan {

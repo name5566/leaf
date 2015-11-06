@@ -61,7 +61,7 @@ func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.conns[conn] = struct{}{}
 	handler.mutexConns.Unlock()
 
-	wsConn := newWSConn(conn, handler.pendingWriteNum)
+	wsConn := newWSConn(conn, handler.pendingWriteNum, handler.maxMsgLen)
 	agent := handler.newAgent(wsConn)
 	agent.Run()
 
