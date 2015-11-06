@@ -82,7 +82,7 @@ func (p *Processor) SetHandler(msg proto.Message, msgHandler MsgHandler) {
 }
 
 // goroutine safe
-func (p *Processor) Route(msg proto.Message, userData interface{}) error {
+func (p *Processor) Route(msg interface{}, userData interface{}) error {
 	msgType := reflect.TypeOf(msg)
 	id, ok := p.msgID[msgType]
 	if !ok {
@@ -100,7 +100,7 @@ func (p *Processor) Route(msg proto.Message, userData interface{}) error {
 }
 
 // goroutine safe
-func (p *Processor) Unmarshal(data []byte) (proto.Message, error) {
+func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
 	if len(data) < 2 {
 		return nil, errors.New("protobuf data too short")
 	}
@@ -117,22 +117,22 @@ func (p *Processor) Unmarshal(data []byte) (proto.Message, error) {
 	if id >= uint16(len(p.msgInfo)) {
 		return nil, fmt.Errorf("message id %v not registered", id)
 	}
-	msg := reflect.New(p.msgInfo[id].msgType.Elem()).Interface().(proto.Message)
-	return msg, proto.UnmarshalMerge(data[2:], msg)
+	msg := reflect.New(p.msgInfo[id].msgType.Elem()).Interface()
+	return msg, proto.UnmarshalMerge(data[2:], msg.(proto.Message))
 }
 
 // goroutine safe
-func (p *Processor) Marshal(msg proto.Message) (id []byte, data []byte, err error) {
+func (p *Processor) Marshal(msg interface{}) ([][]byte, error) {
 	msgType := reflect.TypeOf(msg)
 
 	// id
 	_id, ok := p.msgID[msgType]
 	if !ok {
-		err = fmt.Errorf("message %s not registered", msgType)
-		return
+		err := fmt.Errorf("message %s not registered", msgType)
+		return nil, err
 	}
 
-	id = make([]byte, 2)
+	id := make([]byte, 2)
 	if p.littleEndian {
 		binary.LittleEndian.PutUint16(id, _id)
 	} else {
@@ -140,8 +140,8 @@ func (p *Processor) Marshal(msg proto.Message) (id []byte, data []byte, err erro
 	}
 
 	// data
-	data, err = proto.Marshal(msg)
-	return
+	data, err := proto.Marshal(msg.(proto.Message))
+	return [][]byte{id, data}, err
 }
 
 // goroutine safe

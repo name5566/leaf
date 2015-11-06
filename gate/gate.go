@@ -1,23 +1,19 @@
 package gate
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/name5566/leaf/chanrpc"
 	"github.com/name5566/leaf/log"
 	"github.com/name5566/leaf/network"
-	"github.com/name5566/leaf/network/json"
-	"github.com/name5566/leaf/network/protobuf"
 	"reflect"
 	"time"
 )
 
 type Gate struct {
-	MaxConnNum        int
-	PendingWriteNum   int
-	MaxMsgLen         uint32
-	JSONProcessor     *json.Processor
-	ProtobufProcessor *protobuf.Processor
-	AgentChanRPC      *chanrpc.Server
+	MaxConnNum      int
+	PendingWriteNum int
+	MaxMsgLen       uint32
+	Processor       network.Processor
+	AgentChanRPC    *chanrpc.Server
 
 	// websocket
 	WSAddr      string
@@ -96,26 +92,13 @@ func (a *agent) Run() {
 			break
 		}
 
-		if a.gate.JSONProcessor != nil {
-			// json
-			msg, err := a.gate.JSONProcessor.Unmarshal(data)
+		if a.gate.Processor != nil {
+			msg, err := a.gate.Processor.Unmarshal(data)
 			if err != nil {
-				log.Debug("unmarshal json error: %v", err)
+				log.Debug("unmarshal message error: %v", err)
 				break
 			}
-			err = a.gate.JSONProcessor.Route(msg, a)
-			if err != nil {
-				log.Debug("route message error: %v", err)
-				break
-			}
-		} else if a.gate.ProtobufProcessor != nil {
-			// protobuf
-			msg, err := a.gate.ProtobufProcessor.Unmarshal(data)
-			if err != nil {
-				log.Debug("unmarshal protobuf error: %v", err)
-				break
-			}
-			err = a.gate.ProtobufProcessor.Route(msg, a)
+			err = a.gate.Processor.Route(msg, a)
 			if err != nil {
 				log.Debug("route message error: %v", err)
 				break
@@ -134,22 +117,13 @@ func (a *agent) OnClose() {
 }
 
 func (a *agent) WriteMsg(msg interface{}) {
-	if a.gate.JSONProcessor != nil {
-		// json
-		data, err := a.gate.JSONProcessor.Marshal(msg)
+	if a.gate.Processor != nil {
+		data, err := a.gate.Processor.Marshal(msg)
 		if err != nil {
-			log.Error("marshal json %v error: %v", reflect.TypeOf(msg), err)
+			log.Error("marshal message %v error: %v", reflect.TypeOf(msg), err)
 			return
 		}
-		a.conn.WriteMsg(data)
-	} else if a.gate.ProtobufProcessor != nil {
-		// protobuf
-		id, data, err := a.gate.ProtobufProcessor.Marshal(msg.(proto.Message))
-		if err != nil {
-			log.Error("marshal protobuf %v error: %v", reflect.TypeOf(msg), err)
-			return
-		}
-		a.conn.WriteMsg(id, data)
+		a.conn.WriteMsg(data...)
 	}
 }
 
