@@ -39,7 +39,7 @@ func (gate *Gate) Run(closeSig chan bool) {
 		wsServer.MaxMsgLen = gate.MaxMsgLen
 		wsServer.HTTPTimeout = gate.HTTPTimeout
 		wsServer.NewAgent = func(conn *network.WSConn) network.Agent {
-			a := &agent{wsConn: conn, gate: gate}
+			a := &agent{conn: conn, gate: gate}
 			if gate.AgentChanRPC != nil {
 				gate.AgentChanRPC.Go("NewAgent", a)
 			}
@@ -57,7 +57,7 @@ func (gate *Gate) Run(closeSig chan bool) {
 		tcpServer.MaxMsgLen = gate.MaxMsgLen
 		tcpServer.LittleEndian = gate.LittleEndian
 		tcpServer.NewAgent = func(conn *network.TCPConn) network.Agent {
-			a := &agent{tcpConn: conn, gate: gate}
+			a := &agent{conn: conn, gate: gate}
 			if gate.AgentChanRPC != nil {
 				gate.AgentChanRPC.Go("NewAgent", a)
 			}
@@ -83,23 +83,14 @@ func (gate *Gate) Run(closeSig chan bool) {
 func (gate *Gate) OnDestroy() {}
 
 type agent struct {
-	wsConn   *network.WSConn
-	tcpConn  *network.TCPConn
+	conn     network.Conn
 	gate     *Gate
 	userData interface{}
 }
 
 func (a *agent) Run() {
 	for {
-		var (
-			data []byte
-			err  error
-		)
-		if a.wsConn != nil {
-			data, err = a.wsConn.ReadMsg()
-		} else if a.tcpConn != nil {
-			data, err = a.tcpConn.ReadMsg()
-		}
+		data, err := a.conn.ReadMsg()
 		if err != nil {
 			log.Debug("read message: %v", err)
 			break
@@ -150,11 +141,7 @@ func (a *agent) WriteMsg(msg interface{}) {
 			log.Error("marshal json %v error: %v", reflect.TypeOf(msg), err)
 			return
 		}
-		if a.wsConn != nil {
-			a.wsConn.WriteMsg(data)
-		} else if a.tcpConn != nil {
-			a.tcpConn.WriteMsg(data)
-		}
+		a.conn.WriteMsg(data)
 	} else if a.gate.ProtobufProcessor != nil {
 		// protobuf
 		id, data, err := a.gate.ProtobufProcessor.Marshal(msg.(proto.Message))
@@ -162,20 +149,12 @@ func (a *agent) WriteMsg(msg interface{}) {
 			log.Error("marshal protobuf %v error: %v", reflect.TypeOf(msg), err)
 			return
 		}
-		if a.wsConn != nil {
-			a.wsConn.WriteMsg(id, data)
-		} else if a.tcpConn != nil {
-			a.tcpConn.WriteMsg(id, data)
-		}
+		a.conn.WriteMsg(id, data)
 	}
 }
 
 func (a *agent) Close() {
-	if a.wsConn != nil {
-		a.wsConn.Close()
-	} else if a.tcpConn != nil {
-		a.tcpConn.Close()
-	}
+	a.conn.Close()
 }
 
 func (a *agent) UserData() interface{} {
