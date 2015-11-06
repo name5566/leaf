@@ -163,10 +163,7 @@ func (a *agent) WriteMsg(msg interface{}) {
 			return
 		}
 		if a.wsConn != nil {
-			b := make([]byte, len(id)+len(data))
-			copy(b, id)
-			copy(b[len(id):], data)
-			a.wsConn.WriteMsg(b)
+			a.wsConn.WriteMsg(id, data)
 		} else if a.tcpConn != nil {
 			a.tcpConn.WriteMsg(id, data)
 		}

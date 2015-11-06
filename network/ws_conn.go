@@ -1,6 +1,7 @@
 package network
 
 import (
+	"errors"
 	"github.com/gorilla/websocket"
 	"github.com/name5566/leaf/log"
 	"net"
@@ -96,13 +97,42 @@ func (wsConn *WSConn) ReadMsg() ([]byte, error) {
 	return b, err
 }
 
-// b must not be modified by other goroutines
-func (wsConn *WSConn) WriteMsg(b []byte) {
+// args must not be modified by the others goroutines
+func (wsConn *WSConn) WriteMsg(args ...[]byte) error {
 	wsConn.Lock()
 	defer wsConn.Unlock()
-	if wsConn.closeFlag || b == nil {
-		return
+	if wsConn.closeFlag {
+		return nil
 	}
 
-	wsConn.doWrite(b)
+	// get len
+	var msgLen uint32
+	for i := 0; i < len(args); i++ {
+		msgLen += uint32(len(args[i]))
+	}
+
+	// check len
+	if msgLen > wsConn.maxMsgLen {
+		return errors.New("message too long")
+	} else if msgLen < 1 {
+		return errors.New("message too short")
+	}
+
+	// don't copy
+	if len(args) == 1 {
+		wsConn.doWrite(args[0])
+		return nil
+	}
+
+	// merge the args
+	msg := make([]byte, msgLen)
+	l := 0
+	for i := 0; i < len(args); i++ {
+		copy(msg[l:], args[i])
+		l += len(args[i])
+	}
+
+	wsConn.doWrite(msg)
+
+	return nil
 }
