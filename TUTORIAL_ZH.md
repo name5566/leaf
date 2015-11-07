@@ -50,7 +50,7 @@ Leaf 源码概览
 * leaf/gate 网关模块，负责游戏客户端的接入
 * leaf/go 用于创建能够被 Leaf 管理的 goroutine
 * leaf/log 日志相关
-* leaf/network 网络相关，使用 TCP 和 WebSocket 协议，可自定义消息格式，目前 Leaf 提供了基于 [protobuf](https://developers.google.com/protocol-buffers) 和 JSON 的消息格式
+* leaf/network 网络相关，使用 TCP 和 WebSocket 协议，可自定义消息格式，默认 Leaf 提供了基于 [protobuf](https://developers.google.com/protocol-buffers) 和 JSON 的消息格式
 * leaf/recordfile 用于管理游戏数据
 * leaf/timer 定时器相关
 * leaf/util 辅助库
@@ -66,13 +66,10 @@ Leaf 源码概览
 git clone https://github.com/name5566/leafserver
 ```
 
-设置 leafserver 目录到 GOPATH 后获取相关依赖：
+设置 leafserver 目录到 GOPATH 环境变量后获取 Leaf：
 
 ```
 go get github.com/name5566/leaf
-go get github.com/golang/protobuf/proto
-go get github.com/gorilla/websocket
-go get gopkg.in/mgo.v2
 ```
 
 编译 LeafServer：
@@ -84,7 +81,7 @@ go install server
 如果一切顺利，运行 server 你可以获得以下输出：
 
 ```
-2015/08/26 22:11:27 [release] Leaf starting up
+2015/08/26 22:11:27 [release] Leaf 1.1.1 starting up
 ```
 
 敲击 Ctrl + C 关闭游戏服务器，服务器正常关闭输出：
@@ -103,27 +100,31 @@ go install server
 package msg
 
 import (
-	"github.com/name5566/leaf/network/json"
-	"github.com/name5566/leaf/network/protobuf"
+	"github.com/name5566/leaf/network"
 )
 
-var (
-	JSONProcessor     = json.NewProcessor()
-	ProtobufProcessor = protobuf.NewProcessor()
-)
+var Processor network.Processor
 
 func init() {
 
 }
 ```
 
-我们尝试添加一个名字为 Hello 的消息（msg/msg.go 文件中未改动部分这里略去）：
+Processor 为消息的处理器（可由用户自定义），这里我们使用 Leaf 默认提供的 JSON 消息处理器并尝试添加一个名字为 Hello 的消息：
 
 ```go
+package msg
+
+import (
+	"github.com/name5566/leaf/network/json"
+)
+
+// 使用默认的 JSON 消息处理器（默认还提供了 protobuf 消息处理器）
+var Processor = json.NewProcessor()
+
 func init() {
 	// 这里我们注册了一个 JSON 消息 Hello
-	// 我们也可以使用 ProtobufProcessor 注册 protobuf 消息（同时注意修改配置文件 conf/conf.go 中的 Encoding）
-	JSONProcessor.Register(&Hello{})
+	Processor.Register(&Hello{})
 }
 
 // 一个结构体定义了一个 JSON 消息的格式
@@ -146,7 +147,7 @@ import (
 func init() {
 	// 这里指定消息 Hello 路由到 game 模块
 	// 模块间使用 ChanRPC 通讯，消息路由也不例外
-	msg.JSONProcessor.SetRouter(&msg.Hello{}, game.ChanRPC)
+	msg.Processor.SetRouter(&msg.Hello{}, game.ChanRPC)
 }
 ```
 
@@ -510,4 +511,4 @@ func init() {
 写在最后的话
 ---------------
 
-本文虽然未能全面描述 Leaf 服务器框架的方方面面，但整体轮廓已经显现。Leaf 尚小，但已经足够构建一个完整游戏服务器。在对开发效率的执着追求上，Leaf 还有很长的路需要走。最后，欢迎各位勇士跳坑。
+本文虽然未能全面描述 Leaf 服务器框架的方方面面，但整体轮廓已经显现。Leaf 尚小，但已经足够构建一个完整游戏服务器。在对开发效率的执着追求上，Leaf 还有很长的路需要走。
