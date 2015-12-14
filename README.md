@@ -14,6 +14,7 @@ Community
 ---------
 
 * QQ 群：376389675
+* [http://leafserver.org](http://leafserver.org)
 
 Documentation
 ---------
