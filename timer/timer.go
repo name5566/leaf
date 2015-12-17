@@ -1,7 +1,6 @@
 package timer
 
 import (
-	"errors"
 	"github.com/name5566/leaf/conf"
 	"github.com/name5566/leaf/log"
 	"runtime"
@@ -64,22 +63,19 @@ type Cron struct {
 }
 
 func (c *Cron) Stop() {
-	c.t.Stop()
+	if c.t != nil {
+		c.t.Stop()
+	}
 }
 
-func (disp *Dispatcher) CronFunc(expr string, _cb func()) (*Cron, error) {
-	cronExpr, err := NewCronExpr(expr)
-	if err != nil {
-		return nil, err
-	}
+func (disp *Dispatcher) CronFunc(cronExpr *CronExpr, _cb func()) *Cron {
+	c := new(Cron)
 
 	now := time.Now()
 	nextTime := cronExpr.Next(now)
 	if nextTime.IsZero() {
-		return nil, errors.New("next time not found")
+		return c
 	}
-
-	cron := new(Cron)
 
 	// callback
 	var cb func()
@@ -91,9 +87,9 @@ func (disp *Dispatcher) CronFunc(expr string, _cb func()) (*Cron, error) {
 		if nextTime.IsZero() {
 			return
 		}
-		cron.t = disp.AfterFunc(nextTime.Sub(now), cb)
+		c.t = disp.AfterFunc(nextTime.Sub(now), cb)
 	}
 
-	cron.t = disp.AfterFunc(nextTime.Sub(now), cb)
-	return cron, nil
+	c.t = disp.AfterFunc(nextTime.Sub(now), cb)
+	return c
 }

@@ -46,9 +46,15 @@ func ExampleCronExpr() {
 func ExampleCron() {
 	d := timer.NewDispatcher(10)
 
+	// cron expr
+	cronExpr, err := timer.NewCronExpr("* * * * * *")
+	if err != nil {
+		return
+	}
+
 	// cron
 	var c *timer.Cron
-	c, _ = d.CronFunc("* * * * * *", func() {
+	c = d.CronFunc(cronExpr, func() {
 		fmt.Println("My name is Leaf")
 		c.Stop()
 	})
