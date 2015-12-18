@@ -71,12 +71,12 @@ func (s *Skeleton) AfterFunc(d time.Duration, cb func()) *timer.Timer {
 	return s.dispatcher.AfterFunc(d, cb)
 }
 
-func (s *Skeleton) CronFunc(expr string, cb func()) (*timer.Cron, error) {
+func (s *Skeleton) CronFunc(cronExpr *timer.CronExpr, cb func()) *timer.Cron {
 	if s.TimerDispatcherLen == 0 {
 		panic("invalid TimerDispatcherLen")
 	}
 
-	return s.dispatcher.CronFunc(expr, cb)
+	return s.dispatcher.CronFunc(cronExpr, cb)
 }
 
 func (s *Skeleton) Go(f func(), cb func()) {
