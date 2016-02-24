@@ -105,7 +105,7 @@ func (client *WSClient) connect() {
 	agent.Run()
 
 	// cleanup
-	wsConn.Close()
+	wsConn.Destroy()
 	client.Lock()
 	delete(client.conns, conn)
 	client.Unlock()

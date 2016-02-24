@@ -102,7 +102,7 @@ func (server *TCPServer) run() {
 			agent.Run()
 
 			// cleanup
-			tcpConn.Close()
+			tcpConn.Destroy()
 			server.mutexConns.Lock()
 			delete(server.conns, conn)
 			server.mutexConns.Unlock()
