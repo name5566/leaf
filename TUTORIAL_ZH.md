@@ -81,7 +81,7 @@ go install server
 如果一切顺利，运行 server 你可以获得以下输出：
 
 ```
-2015/08/26 22:11:27 [release] Leaf 1.1.1 starting up
+2015/08/26 22:11:27 [release] Leaf 1.1.2 starting up
 ```
 
 敲击 Ctrl + C 关闭游戏服务器，服务器正常关闭输出：
