@@ -103,7 +103,7 @@ func (client *TCPClient) connect() {
 	agent.Run()
 
 	// cleanup
-	tcpConn.Destroy()
+	tcpConn.Close()
 	client.Lock()
 	delete(client.conns, conn)
 	client.Unlock()
