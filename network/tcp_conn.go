@@ -46,16 +46,16 @@ func newTCPConn(conn net.Conn, pendingWriteNum int, msgParser *MsgParser) *TCPCo
 func (tcpConn *TCPConn) doDestroy() {
 	tcpConn.conn.(*net.TCPConn).SetLinger(0)
 	tcpConn.conn.Close()
-	close(tcpConn.writeChan)
-	tcpConn.closeFlag = true
+
+	if !tcpConn.closeFlag {
+		close(tcpConn.writeChan)
+		tcpConn.closeFlag = true
+	}
 }
 
 func (tcpConn *TCPConn) Destroy() {
 	tcpConn.Lock()
 	defer tcpConn.Unlock()
-	if tcpConn.closeFlag {
-		return
-	}
 
 	tcpConn.doDestroy()
 }
