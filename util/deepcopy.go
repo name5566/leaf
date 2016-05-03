@@ -41,7 +41,7 @@ func deepCopy(dst, src reflect.Value) {
 		for i := 0; i < src.NumField(); i++ {
 			value := src.Field(i)
 			tag := typeSrc.Field(i).Tag
-			if value.CanSet() && tag != "ignore" {
+			if value.CanSet() && tag.Get("deepcopy") != "-" {
 				deepCopy(dst.Field(i), value)
 			}
 		}
