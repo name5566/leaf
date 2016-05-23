@@ -15,6 +15,7 @@ type WSClient struct {
 	PendingWriteNum  int
 	MaxMsgLen        uint32
 	HandshakeTimeout time.Duration
+	AutoReconnect    bool
 	NewAgent         func(*WSConn) Agent
 	dialer           websocket.Dialer
 	conns            WebsocketConnSet
@@ -85,6 +86,7 @@ func (client *WSClient) dial() *websocket.Conn {
 func (client *WSClient) connect() {
 	defer client.wg.Done()
 
+reconnect:
 	conn := client.dial()
 	if conn == nil {
 		return
@@ -110,6 +112,10 @@ func (client *WSClient) connect() {
 	delete(client.conns, conn)
 	client.Unlock()
 	agent.OnClose()
+
+	if client.AutoReconnect {
+		goto reconnect
+	}
 }
 
 func (client *WSClient) Close() {
