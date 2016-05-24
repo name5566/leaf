@@ -114,6 +114,7 @@ reconnect:
 	agent.OnClose()
 
 	if client.AutoReconnect {
+		time.Sleep(client.ConnectInterval)
 		goto reconnect
 	}
 }
