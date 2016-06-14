@@ -123,7 +123,10 @@ func (a *agent) WriteMsg(msg interface{}) {
 			log.Error("marshal message %v error: %v", reflect.TypeOf(msg), err)
 			return
 		}
-		a.conn.WriteMsg(data...)
+		err = a.conn.WriteMsg(data...)
+		if err != nil {
+			log.Error("write message %v error: %v", reflect.TypeOf(msg), err)
+		}
 	}
 }
 
