@@ -51,6 +51,7 @@ func New(st interface{}) (*RecordFile, error) {
 		case reflect.Struct:
 		case reflect.Array:
 		case reflect.Slice:
+		case reflect.Map:
 		default:
 			return nil, fmt.Errorf("invalid type: %v %s",
 				f.Name, kind)
@@ -170,7 +171,8 @@ func (rf *RecordFile) Read(name string) error {
 				field.SetString(strField)
 			} else if kind == reflect.Struct ||
 				kind == reflect.Array ||
-				kind == reflect.Slice {
+				kind == reflect.Slice ||
+				kind == reflect.Map{
 				err = json.Unmarshal([]byte(strField), field.Addr().Interface())
 			}
 
