@@ -115,7 +115,7 @@ func (rf *RecordFile) Read(name string) error {
 
 		line := lines[n]
 		if len(line) != typeRecord.NumField() {
-			return fmt.Errorf("line %v, field count mismatch: %v %v",
+			return fmt.Errorf("line %v, field count mismatch: %v (file) %v (st)",
 				n, len(line), typeRecord.NumField())
 		}
 
