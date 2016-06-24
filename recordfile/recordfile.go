@@ -60,7 +60,7 @@ func New(st interface{}) (*RecordFile, error) {
 		tag := f.Tag
 		if tag == "index" {
 			switch kind {
-			case reflect.Struct, reflect.Array, reflect.Slice:
+			case reflect.Struct, reflect.Array, reflect.Slice, reflect.Map:
 				return nil, fmt.Errorf("could not index %s field %v %v",
 					kind, i, f.Name)
 			}
@@ -172,7 +172,7 @@ func (rf *RecordFile) Read(name string) error {
 			} else if kind == reflect.Struct ||
 				kind == reflect.Array ||
 				kind == reflect.Slice ||
-				kind == reflect.Map{
+				kind == reflect.Map {
 				err = json.Unmarshal([]byte(strField), field.Addr().Interface())
 			}
 
