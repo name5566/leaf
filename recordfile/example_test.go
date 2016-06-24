@@ -20,6 +20,7 @@ func Example() {
 			Name string "name"
 			Num  int    "num"
 		}
+		M map[string]int
 	}
 
 	rf, err := recordfile.New(Record{})
@@ -49,6 +50,7 @@ func Example() {
 	fmt.Println(r.Arr2[2][0])
 	fmt.Println(r.Arr3[0])
 	fmt.Println(r.St.Name)
+	fmt.Println(r.M["key6"])
 
 	// Output:
 	// 1
@@ -61,4 +63,5 @@ func Example() {
 	// 4
 	// 6
 	// name5566
+	// 6
 }
