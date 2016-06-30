@@ -60,7 +60,7 @@ func New(st interface{}) (*RecordFile, error) {
 		tag := f.Tag
 		if tag == "index" {
 			switch kind {
-			case reflect.Struct, reflect.Array, reflect.Slice, reflect.Map:
+			case reflect.Struct, reflect.Slice, reflect.Map:
 				return nil, fmt.Errorf("could not index %s field %v %v",
 					kind, i, f.Name)
 			}
