@@ -35,7 +35,9 @@ func Init() {
 	}
 
 	for i := 0; i < len(mods); i++ {
-		go run(mods[i])
+		m := mods[i]
+		m.wg.Add(1)
+		go run(m)
 	}
 }
 
@@ -49,7 +51,6 @@ func Destroy() {
 }
 
 func run(m *module) {
-	m.wg.Add(1)
 	m.mi.Run(m.closeSig)
 	m.wg.Done()
 }
