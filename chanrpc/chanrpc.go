@@ -18,6 +18,7 @@ type Server struct {
 	// func(args []interface{}) []interface{}
 	functions map[interface{}]interface{}
 	ChanCall  chan *CallInfo
+	ChanAsynRet chan *RetInfo
 }
 
 type CallInfo struct {
@@ -44,13 +45,13 @@ type Client struct {
 	s               *Server
 	chanSyncRet     chan *RetInfo
 	ChanAsynRet     chan *RetInfo
-	pendingAsynCall int
 }
 
 func NewServer(l int) *Server {
 	s := new(Server)
 	s.functions = make(map[interface{}]interface{})
 	s.ChanCall = make(chan *CallInfo, l)
+	s.ChanAsynRet = make(chan *RetInfo, l)
 	return s
 }
 
@@ -144,11 +145,13 @@ func (s *Server) Close() {
 }
 
 // goroutine safe
-func (s *Server) Open(l int) *Client {
+func (s *Server) Open(chanAsynRet chan *RetInfo) *Client {
 	c := new(Client)
 	c.s = s
 	c.chanSyncRet = make(chan *RetInfo, 1)
-	c.ChanAsynRet = make(chan *RetInfo, l)
+	if chanAsynRet != nil {
+		c.ChanAsynRet = chanAsynRet
+	}
 	return c
 }
 
@@ -268,8 +271,6 @@ func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n 
 	if err != nil {
 		return err
 	}
-
-	c.pendingAsynCall++
 	return nil
 }
 
@@ -307,7 +308,7 @@ func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
 	}
 }
 
-func (c *Client) Cb(ri *RetInfo) {
+func Cb(ri *RetInfo) {
 	switch ri.cb.(type) {
 	case func(error):
 		ri.cb.(func(error))(ri.err)
@@ -317,13 +318,5 @@ func (c *Client) Cb(ri *RetInfo) {
 		ri.cb.(func([]interface{}, error))(ri.ret.([]interface{}), ri.err)
 	default:
 		panic("bug")
-	}
-
-	c.pendingAsynCall--
-}
-
-func (c *Client) Close() {
-	for c.pendingAsynCall > 0 {
-		c.Cb(<-c.ChanAsynRet)
 	}
 }

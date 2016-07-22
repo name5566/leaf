@@ -46,7 +46,7 @@ func (c *ExternalCommand) run(_args []string) string {
 		args[i] = v
 	}
 
-	ret, err := c.server.Open(0).Call1(c._name, args...)
+	ret, err := c.server.Open(nil).Call1(c._name, args...)
 	if err != nil {
 		return err.Error()
 	}
