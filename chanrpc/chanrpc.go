@@ -18,7 +18,6 @@ type Server struct {
 	// func(args []interface{}) []interface{}
 	functions map[interface{}]interface{}
 	ChanCall  chan *CallInfo
-	ChanAsynRet chan *RetInfo
 }
 
 type CallInfo struct {
@@ -42,16 +41,15 @@ type RetInfo struct {
 }
 
 type Client struct {
-	s               *Server
-	chanSyncRet     chan *RetInfo
-	ChanAsynRet     chan *RetInfo
+	s           *Server
+	chanSyncRet chan *RetInfo
+	chanAsynRet chan *RetInfo
 }
 
 func NewServer(l int) *Server {
 	s := new(Server)
 	s.functions = make(map[interface{}]interface{})
 	s.ChanCall = make(chan *CallInfo, l)
-	s.ChanAsynRet = make(chan *RetInfo, l)
 	return s
 }
 
@@ -149,9 +147,7 @@ func (s *Server) Open(chanAsynRet chan *RetInfo) *Client {
 	c := new(Client)
 	c.s = s
 	c.chanSyncRet = make(chan *RetInfo, 1)
-	if chanAsynRet != nil {
-		c.ChanAsynRet = chanAsynRet
-	}
+	c.chanAsynRet = chanAsynRet
 	return c
 }
 
@@ -265,12 +261,13 @@ func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n 
 	err = c.call(&CallInfo{
 		f:       f,
 		args:    args,
-		chanRet: c.ChanAsynRet,
+		chanRet: c.chanAsynRet,
 		cb:      cb,
 	}, false)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -308,7 +305,7 @@ func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
 	}
 }
 
-func Cb(ri *RetInfo) {
+func ExecCb(ri *RetInfo) {
 	switch ri.cb.(type) {
 	case func(error):
 		ri.cb.(func(error))(ri.err)

@@ -46,8 +46,8 @@ func Example() {
 	wg.Add(1)
 
 	// goroutine 2
-	chanAsynRet := make(chan *chanrpc.RetInfo, 10)
 	go func() {
+		chanAsynRet := make(chan *chanrpc.RetInfo, 10)
 		c := s.Open(chanAsynRet)
 
 		// sync
@@ -108,10 +108,10 @@ func Example() {
 			}
 		})
 
-		chanrpc.Cb(<-chanAsynRet)
-		chanrpc.Cb(<-chanAsynRet)
-		chanrpc.Cb(<-chanAsynRet)
-		chanrpc.Cb(<-chanAsynRet)
+		chanrpc.ExecCb(<-chanAsynRet)
+		chanrpc.ExecCb(<-chanAsynRet)
+		chanrpc.ExecCb(<-chanAsynRet)
+		chanrpc.ExecCb(<-chanAsynRet)
 
 		// go
 		s.Go("f0")
