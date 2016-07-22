@@ -50,6 +50,8 @@ func (s *Skeleton) Run(closeSig chan bool) {
 			if err != nil {
 				log.Error("%v", err)
 			}
+		case ri := <-s.server.ChanAsynRet:
+			chanrpc.Cb(ri)
 		case ci := <-s.commandServer.ChanCall:
 			err := s.commandServer.Exec(ci)
 			if err != nil {
