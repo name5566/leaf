@@ -260,10 +260,11 @@ func (c *Client) CallN(id interface{}, args ...interface{}) ([]interface{}, erro
 	return assert(ri.ret), ri.err
 }
 
-func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n int) error {
+func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n int) {
 	f, err := c.f(id, n)
 	if err != nil {
-		return err
+		c.chanAsynRet <- &RetInfo{err: err, cb: cb}
+		return
 	}
 
 	err = c.call(&CallInfo{
@@ -273,10 +274,9 @@ func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n 
 		cb:      cb,
 	}, false)
 	if err != nil {
-		return err
+		c.chanAsynRet <- &RetInfo{err: err, cb: cb}
+		return
 	}
-
-	return nil
 }
 
 func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
@@ -294,20 +294,11 @@ func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
 	cb := _args[len(_args)-1]
 	switch cb.(type) {
 	case func(error):
-		err := c.asynCall(id, args, cb, 0)
-		if err != nil {
-			cb.(func(error))(err)
-		}
+		c.asynCall(id, args, cb, 0)
 	case func(interface{}, error):
-		err := c.asynCall(id, args, cb, 1)
-		if err != nil {
-			cb.(func(interface{}, error))(nil, err)
-		}
+		c.asynCall(id, args, cb, 1)
 	case func([]interface{}, error):
-		err := c.asynCall(id, args, cb, 2)
-		if err != nil {
-			cb.(func([]interface{}, error))(nil, err)
-		}
+		c.asynCall(id, args, cb, 2)
 	default:
 		panic("definition of callback function is invalid")
 	}
