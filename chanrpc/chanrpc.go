@@ -313,7 +313,20 @@ func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
 	}
 }
 
-func ExecCb(ri *RetInfo) {
+func ExecCb(ri *RetInfo) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if conf.LenStackBuf > 0 {
+				buf := make([]byte, conf.LenStackBuf)
+				l := runtime.Stack(buf, false)
+				err = fmt.Errorf("%v: %s", r, buf[:l])
+			} else {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+
+	// execute
 	switch ri.cb.(type) {
 	case func(error):
 		ri.cb.(func(error))(ri.err)
@@ -324,4 +337,5 @@ func ExecCb(ri *RetInfo) {
 	default:
 		panic("bug")
 	}
+	return
 }
