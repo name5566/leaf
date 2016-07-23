@@ -53,6 +53,14 @@ func NewServer(l int) *Server {
 	return s
 }
 
+func assert(i interface{}) []interface{} {
+	if i == nil {
+		return nil
+	} else {
+		return i.([]interface{})
+	}
+}
+
 // you must call the function before calling Open and Go
 func (s *Server) Register(id interface{}, f interface{}) {
 	switch f.(type) {
@@ -249,7 +257,7 @@ func (c *Client) CallN(id interface{}, args ...interface{}) ([]interface{}, erro
 	}
 
 	ri := <-c.chanSyncRet
-	return ri.ret.([]interface{}), ri.err
+	return assert(ri.ret), ri.err
 }
 
 func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n int) error {
@@ -312,7 +320,7 @@ func ExecCb(ri *RetInfo) {
 	case func(interface{}, error):
 		ri.cb.(func(interface{}, error))(ri.ret, ri.err)
 	case func([]interface{}, error):
-		ri.cb.(func([]interface{}, error))(ri.ret.([]interface{}), ri.err)
+		ri.cb.(func([]interface{}, error))(assert(ri.ret), ri.err)
 	default:
 		panic("bug")
 	}
