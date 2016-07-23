@@ -271,7 +271,7 @@ func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n 
 	return nil
 }
 
-func (c *Client) AsynCall(id interface{}, _args ...interface{}) bool {
+func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
 	if len(_args) < 1 {
 		panic("callback function not found")
 	}
@@ -289,25 +289,20 @@ func (c *Client) AsynCall(id interface{}, _args ...interface{}) bool {
 		err := c.asynCall(id, args, cb, 0)
 		if err != nil {
 			cb.(func(error))(err)
-			return false
 		}
 	case func(interface{}, error):
 		err := c.asynCall(id, args, cb, 1)
 		if err != nil {
 			cb.(func(interface{}, error))(nil, err)
-			return false
 		}
 	case func([]interface{}, error):
 		err := c.asynCall(id, args, cb, 2)
 		if err != nil {
 			cb.(func([]interface{}, error))(nil, err)
-			return false
 		}
 	default:
 		panic("definition of callback function is invalid")
 	}
-
-	return true
 }
 
 func ExecCb(ri *RetInfo) {
