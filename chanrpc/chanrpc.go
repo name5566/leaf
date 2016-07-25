@@ -149,6 +149,27 @@ func (s *Server) Go(id interface{}, args ...interface{}) {
 	}
 }
 
+// goroutine safe
+func (s *Server) Call0(id interface{}, args ...interface{}) error {
+	c := NewClient(0)
+	c.Attach(s)
+	return c.Call0(id, args...)
+}
+
+// goroutine safe
+func (s *Server) Call1(id interface{}, args ...interface{}) (interface{}, error) {
+	c := NewClient(0)
+	c.Attach(s)
+	return c.Call1(id, args...)
+}
+
+// goroutine safe
+func (s *Server) CallN(id interface{}, args ...interface{}) ([]interface{}, error) {
+	c := NewClient(0)
+	c.Attach(s)
+	return c.CallN(id, args...)
+}
+
 func (s *Server) Close() {
 	close(s.ChanCall)
 
@@ -157,13 +178,6 @@ func (s *Server) Close() {
 			err: errors.New("chanrpc server closed"),
 		})
 	}
-}
-
-// goroutine safe
-func (s *Server) Open(l int) *Client {
-	c := NewClient(l)
-	c.Attach(s)
-	return c
 }
 
 func NewClient(l int) *Client {
