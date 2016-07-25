@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/name5566/leaf/conf"
+	"github.com/name5566/leaf/log"
 	"runtime"
 )
 
@@ -95,7 +96,7 @@ func (s *Server) ret(ci *CallInfo, ri *RetInfo) (err error) {
 	return
 }
 
-func (s *Server) Exec(ci *CallInfo) (err error) {
+func (s *Server) exec(ci *CallInfo) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if conf.LenStackBuf > 0 {
@@ -124,6 +125,13 @@ func (s *Server) Exec(ci *CallInfo) (err error) {
 	}
 
 	panic("bug")
+}
+
+func (s *Server) Exec(ci *CallInfo) {
+	err := s.exec(ci)
+	if err != nil {
+		log.Error("%v", err)
+	}
 }
 
 // goroutine safe
@@ -294,9 +302,9 @@ func (c *Client) asynCall(id interface{}, args []interface{}, cb interface{}, n 
 	}
 }
 
-func (c *Client) AsynCall(id interface{}, _args ...interface{}) error {
+func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
 	if len(_args) < 1 {
-		return errors.New("callback function not found")
+		panic("callback function not found")
 	}
 
 	args := _args[:len(_args)-1]
@@ -311,29 +319,28 @@ func (c *Client) AsynCall(id interface{}, _args ...interface{}) error {
 	case func([]interface{}, error):
 		n = 2
 	default:
-		return errors.New("definition of callback function is invalid")
+		panic("definition of callback function is invalid")
 	}
 
 	// too many calls
 	if c.pendingAsynCall >= cap(c.ChanAsynRet) {
-		err := execCb(&RetInfo{err: errors.New("too many calls"), cb: cb})
-		return err
+		execCb(&RetInfo{err: errors.New("too many calls"), cb: cb})
+		return
 	}
 
 	c.asynCall(id, args, cb, n)
 	c.pendingAsynCall++
-	return nil
 }
 
-func execCb(ri *RetInfo) (err error) {
+func execCb(ri *RetInfo) {
 	defer func() {
 		if r := recover(); r != nil {
 			if conf.LenStackBuf > 0 {
 				buf := make([]byte, conf.LenStackBuf)
 				l := runtime.Stack(buf, false)
-				err = fmt.Errorf("%v: %s", r, buf[:l])
+				log.Error("%v: %s", r, buf[:l])
 			} else {
-				err = fmt.Errorf("%v", r)
+				log.Error("%v", r)
 			}
 		}
 	}()
@@ -352,9 +359,9 @@ func execCb(ri *RetInfo) (err error) {
 	return
 }
 
-func (c *Client) Cb(ri *RetInfo) error {
+func (c *Client) Cb(ri *RetInfo) {
 	c.pendingAsynCall--
-	return execCb(ri)
+	execCb(ri)
 }
 
 func (c *Client) Close() {

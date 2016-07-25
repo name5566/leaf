@@ -4,7 +4,6 @@ import (
 	"github.com/name5566/leaf/chanrpc"
 	"github.com/name5566/leaf/console"
 	"github.com/name5566/leaf/go"
-	"github.com/name5566/leaf/log"
 	"github.com/name5566/leaf/timer"
 	"time"
 )
@@ -46,15 +45,9 @@ func (s *Skeleton) Run(closeSig chan bool) {
 			s.g.Close()
 			return
 		case ci := <-s.server.ChanCall:
-			err := s.server.Exec(ci)
-			if err != nil {
-				log.Error("%v", err)
-			}
+			s.server.Exec(ci)
 		case ci := <-s.commandServer.ChanCall:
-			err := s.commandServer.Exec(ci)
-			if err != nil {
-				log.Error("%v", err)
-			}
+			s.commandServer.Exec(ci)
 		case cb := <-s.g.ChanCb:
 			s.g.Cb(cb)
 		case t := <-s.dispatcher.ChanTimer:
