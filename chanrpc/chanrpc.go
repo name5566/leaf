@@ -384,3 +384,7 @@ func (c *Client) Close() {
 		c.Cb(<-c.ChanAsynRet)
 	}
 }
+
+func (c *Client) Idle() bool {
+	return c.pendingAsynCall == 0
+}

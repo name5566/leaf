@@ -78,6 +78,10 @@ func (g *Go) Close() {
 	}
 }
 
+func (g *Go) Idle() bool {
+	return g.pendingGo == 0
+}
+
 func (g *Go) NewLinearContext() *LinearContext {
 	c := new(LinearContext)
 	c.g = g
