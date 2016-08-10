@@ -29,7 +29,6 @@ func (client *WSClient) Start() {
 	for i := 0; i < client.ConnNum; i++ {
 		client.wg.Add(1)
 		go client.connect()
-		time.Sleep(1)
 	}
 }
 
