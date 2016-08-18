@@ -41,7 +41,7 @@ func (p *Processor) SetByteOrder(littleEndian bool) {
 }
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
-func (p *Processor) Register(msg proto.Message) {
+func (p *Processor) Register(msg proto.Message) uint16 {
 	msgType := reflect.TypeOf(msg)
 	if msgType == nil || msgType.Kind() != reflect.Ptr {
 		log.Fatal("protobuf message pointer required")
@@ -56,7 +56,9 @@ func (p *Processor) Register(msg proto.Message) {
 	i := new(MsgInfo)
 	i.msgType = msgType
 	p.msgInfo = append(p.msgInfo, i)
-	p.msgID[msgType] = uint16(len(p.msgInfo) - 1)
+	id := uint16(len(p.msgInfo) - 1)
+	p.msgID[msgType] = id
+	return id
 }
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
