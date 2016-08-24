@@ -21,12 +21,18 @@ type Processor struct {
 }
 
 type MsgInfo struct {
-	msgType    reflect.Type
-	msgRouter  *chanrpc.Server
-	msgHandler MsgHandler
+	msgType       reflect.Type
+	msgRouter     *chanrpc.Server
+	msgHandler    MsgHandler
+	msgRawHandler MsgHandler
 }
 
 type MsgHandler func([]interface{})
+
+type MsgRaw struct {
+	msgID      uint16
+	msgRawData []byte
+}
 
 func NewProcessor() *Processor {
 	p := new(Processor)
@@ -83,14 +89,36 @@ func (p *Processor) SetHandler(msg proto.Message, msgHandler MsgHandler) {
 	p.msgInfo[id].msgHandler = msgHandler
 }
 
+// It's dangerous to call the method on routing or marshaling (unmarshaling)
+func (p *Processor) SetRawHandler(id uint16, msgRawHandler MsgHandler) {
+	if id >= uint16(len(p.msgInfo)) {
+		log.Fatal("message id %v not registered", id)
+	}
+
+	p.msgInfo[id].msgRawHandler = msgRawHandler
+}
+
 // goroutine safe
 func (p *Processor) Route(msg interface{}, userData interface{}) error {
 	msgType := reflect.TypeOf(msg)
+
+	// raw
+	if msgRaw, ok := msg.(MsgRaw); ok {
+		if msgRaw.msgID >= uint16(len(p.msgInfo)) {
+			return fmt.Errorf("message id %v not registered", msgRaw.msgID)
+		}
+		i := p.msgInfo[msgRaw.msgID]
+		if i.msgRawHandler != nil {
+			i.msgRawHandler([]interface{}{msgRaw.msgID, msgRaw.msgRawData, userData})
+		}
+		return nil
+	}
+
+	// protobuf
 	id, ok := p.msgID[msgType]
 	if !ok {
 		return fmt.Errorf("message %s not registered", msgType)
 	}
-
 	i := p.msgInfo[id]
 	if i.msgHandler != nil {
 		i.msgHandler([]interface{}{msg, userData})
@@ -114,13 +142,18 @@ func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
 	} else {
 		id = binary.BigEndian.Uint16(data)
 	}
-
-	// msg
 	if id >= uint16(len(p.msgInfo)) {
 		return nil, fmt.Errorf("message id %v not registered", id)
 	}
-	msg := reflect.New(p.msgInfo[id].msgType.Elem()).Interface()
-	return msg, proto.UnmarshalMerge(data[2:], msg.(proto.Message))
+
+	// msg
+	i := p.msgInfo[id]
+	if i.msgRawHandler != nil {
+		return MsgRaw{id, data[2:]}, nil
+	} else {
+		msg := reflect.New(i.msgType.Elem()).Interface()
+		return msg, proto.UnmarshalMerge(data[2:], msg.(proto.Message))
+	}
 }
 
 // goroutine safe
