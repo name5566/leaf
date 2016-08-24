@@ -100,8 +100,6 @@ func (p *Processor) SetRawHandler(id uint16, msgRawHandler MsgHandler) {
 
 // goroutine safe
 func (p *Processor) Route(msg interface{}, userData interface{}) error {
-	msgType := reflect.TypeOf(msg)
-
 	// raw
 	if msgRaw, ok := msg.(MsgRaw); ok {
 		if msgRaw.msgID >= uint16(len(p.msgInfo)) {
@@ -115,6 +113,7 @@ func (p *Processor) Route(msg interface{}, userData interface{}) error {
 	}
 
 	// protobuf
+	msgType := reflect.TypeOf(msg)
 	id, ok := p.msgID[msgType]
 	if !ok {
 		return fmt.Errorf("message %s not registered", msgType)
