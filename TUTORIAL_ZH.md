@@ -508,7 +508,7 @@ func init() {
 
 更加详细的用法可以参考 [leaf/recordfile](https://github.com/name5566/leaf/blob/master/recordfile)。
 
-写在最后的话
+了解更多
 ---------------
 
-本文虽然未能全面描述 Leaf 服务器框架的方方面面，但整体轮廓已经显现。Leaf 尚小，但已经足够构建一个完整游戏服务器。在对开发效率的执着追求上，Leaf 还有很长的路需要走。
+阅读 Wiki 获取更多的帮助：[https://github.com/name5566/leaf/wiki](https://github.com/name5566/leaf/wiki)
