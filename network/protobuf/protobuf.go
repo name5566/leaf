@@ -90,11 +90,9 @@ func (p *Processor) SetHandler(msg proto.Message, msgHandler MsgHandler) {
 }
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
-func (p *Processor) SetRawHandler(msg proto.Message, msgRawHandler MsgHandler) {
-	msgType := reflect.TypeOf(msg)
-	id, ok := p.msgID[msgType]
-	if !ok {
-		log.Fatal("message %s not registered", msgType)
+func (p *Processor) SetRawHandler(id uint16, msgRawHandler MsgHandler) {
+	if id >= uint16(len(p.msgInfo)) {
+		log.Fatal("message id %v not registered", id)
 	}
 
 	p.msgInfo[id].msgRawHandler = msgRawHandler
