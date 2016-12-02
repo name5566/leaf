@@ -127,12 +127,11 @@ func (s *Server) exec(ci *CallInfo) (err error) {
 	panic("bug")
 }
 
-func (s *Server) Exec(ci *CallInfo) error{
+func (s *Server) Exec(ci *CallInfo) {
 	err := s.exec(ci)
 	if err != nil {
 		log.Error("%v", err)
 	}
-	return err
 }
 
 // goroutine safe

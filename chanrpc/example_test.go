@@ -35,10 +35,7 @@ func Example() {
 		wg.Done()
 
 		for {
-			err := s.Exec(<-s.ChanCall)
-			if err != nil {
-				fmt.Println(err)
-			}
+			s.Exec(<-s.ChanCall)
 		}
 	}()
 
