@@ -12,7 +12,7 @@ func Example() {
 	log.Error("My name is %v", name)
 	// log.Fatal("My name is %v", name)
 
-	logger, err := log.New("release", "")
+	logger, err := log.New("release", "", 0)
 	if err != nil {
 		return
 	}

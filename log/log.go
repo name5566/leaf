@@ -31,7 +31,7 @@ type Logger struct {
 	baseFile   *os.File
 }
 
-func New(strLevel string, pathname string) (*Logger, error) {
+func New(strLevel string, pathname string, flag int) (*Logger, error) {
 	// level
 	var level int
 	switch strings.ToLower(strLevel) {
@@ -66,10 +66,10 @@ func New(strLevel string, pathname string) (*Logger, error) {
 			return nil, err
 		}
 
-		baseLogger = log.New(file, "", log.LstdFlags)
+		baseLogger = log.New(file, "", flag)
 		baseFile = file
 	} else {
-		baseLogger = log.New(os.Stdout, "", log.LstdFlags)
+		baseLogger = log.New(os.Stdout, "", flag)
 	}
 
 	// new
@@ -123,7 +123,7 @@ func (logger *Logger) Fatal(format string, a ...interface{}) {
 	logger.doPrintf(fatalLevel, printFatalLevel, format, a...)
 }
 
-var gLogger, _ = New("debug", "")
+var gLogger, _ = New("debug", "", log.LstdFlags)
 
 // It's dangerous to call the method on logging
 func Export(logger *Logger) {
