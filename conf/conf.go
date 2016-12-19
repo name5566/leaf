@@ -6,6 +6,7 @@ var (
 	// log
 	LogLevel string
 	LogPath  string
+	LogFlag  int
 
 	// console
 	ConsolePort   int
