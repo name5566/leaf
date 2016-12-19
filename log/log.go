@@ -91,6 +91,22 @@ func (logger *Logger) Close() {
 	logger.baseFile = nil
 }
 
+func (logger *Logger) doPrintf(level int, printLevel string, format string, a ...interface{}) {
+	if level < logger.level {
+		return
+	}
+	if logger.baseLogger == nil {
+		panic("logger closed")
+	}
+
+	format = printLevel + format
+	logger.baseLogger.Printf(format, a...)
+
+	if level == fatalLevel {
+		os.Exit(1)
+	}
+}
+
 func (logger *Logger) Debug(format string, a ...interface{}) {
 	logger.doPrintf(debugLevel, printDebugLevel, format, a...)
 }
