@@ -2,6 +2,7 @@ package log_test
 
 import (
 	"github.com/name5566/leaf/log"
+	l "log"
 )
 
 func Example() {
@@ -12,7 +13,7 @@ func Example() {
 	log.Error("My name is %v", name)
 	// log.Fatal("My name is %v", name)
 
-	logger, err := log.New("release", "", 0)
+	logger, err := log.New("release", "", l.LstdFlags)
 	if err != nil {
 		return
 	}
