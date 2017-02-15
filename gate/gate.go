@@ -4,6 +4,7 @@ import (
 	"github.com/name5566/leaf/chanrpc"
 	"github.com/name5566/leaf/log"
 	"github.com/name5566/leaf/network"
+	"net"
 	"reflect"
 	"time"
 )
@@ -128,6 +129,14 @@ func (a *agent) WriteMsg(msg interface{}) {
 			log.Error("write message %v error: %v", reflect.TypeOf(msg), err)
 		}
 	}
+}
+
+func (a *agent) LocalAddr() net.Addr {
+	return a.conn.LocalAddr()
+}
+
+func (a *agent) RemoteAddr() net.Addr {
+	return a.conn.RemoteAddr()
 }
 
 func (a *agent) Close() {
