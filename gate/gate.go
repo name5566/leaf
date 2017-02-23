@@ -19,6 +19,8 @@ type Gate struct {
 	// websocket
 	WSAddr      string
 	HTTPTimeout time.Duration
+	CertFile    string
+	KeyFile     string
 
 	// tcp
 	TCPAddr      string
@@ -35,6 +37,8 @@ func (gate *Gate) Run(closeSig chan bool) {
 		wsServer.PendingWriteNum = gate.PendingWriteNum
 		wsServer.MaxMsgLen = gate.MaxMsgLen
 		wsServer.HTTPTimeout = gate.HTTPTimeout
+		wsServer.CertFile = gate.CertFile
+		wsServer.KeyFile = gate.KeyFile
 		wsServer.NewAgent = func(conn *network.WSConn) network.Agent {
 			a := &agent{conn: conn, gate: gate}
 			if gate.AgentChanRPC != nil {

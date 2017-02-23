@@ -15,6 +15,8 @@ type WSServer struct {
 	PendingWriteNum int
 	MaxMsgLen       uint32
 	HTTPTimeout     time.Duration
+	CertFile        string
+	KeyFile         string
 	NewAgent        func(*WSConn) Agent
 	ln              net.Listener
 	handler         *WSHandler
