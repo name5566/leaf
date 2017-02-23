@@ -1,6 +1,7 @@
 package network
 
 import (
+	"crypto/tls"
 	"github.com/gorilla/websocket"
 	"github.com/name5566/leaf/log"
 	"net"
@@ -99,6 +100,20 @@ func (server *WSServer) Start() {
 	}
 	if server.NewAgent == nil {
 		log.Fatal("NewAgent must not be nil")
+	}
+
+	if server.CertFile != "" || server.KeyFile != "" {
+		config := &tls.Config{}
+		config.NextProtos = []string{"http/1.1"}
+
+		var err error
+		config.Certificates = make([]tls.Certificate, 1)
+		config.Certificates[0], err = tls.LoadX509KeyPair(server.CertFile, server.KeyFile)
+		if err != nil {
+			log.Fatal("%v", err)
+		}
+
+		ln = tls.NewListener(ln, config)
 	}
 
 	server.ln = ln
