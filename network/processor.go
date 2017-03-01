@@ -1,5 +1,7 @@
 package network
 
+type MsgHandler func([]interface{})
+
 type Processor interface {
 	// must goroutine safe
 	Route(msg interface{}, userData interface{}) error

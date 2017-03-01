@@ -14,7 +14,8 @@ var (
 	ProfilePath   string
 
 	// cluster
-	ListenAddr      string
+	ServerName		string
+	ListenAddrs     []string
 	ConnAddrs       []string
 	PendingWriteNum int
 )

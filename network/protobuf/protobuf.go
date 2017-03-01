@@ -72,7 +72,7 @@ func (p *Processor) SetRouter(msg proto.Message, msgRouter *chanrpc.Server) {
 	msgType := reflect.TypeOf(msg)
 	id, ok := p.msgID[msgType]
 	if !ok {
-		log.Fatal("message %s not registered", msgType)
+		id = p.Register(msg)
 	}
 
 	p.msgInfo[id].msgRouter = msgRouter
@@ -83,7 +83,7 @@ func (p *Processor) SetHandler(msg proto.Message, msgHandler MsgHandler) {
 	msgType := reflect.TypeOf(msg)
 	id, ok := p.msgID[msgType]
 	if !ok {
-		log.Fatal("message %s not registered", msgType)
+		id = p.Register(msg)
 	}
 
 	p.msgInfo[id].msgHandler = msgHandler
