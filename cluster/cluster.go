@@ -17,9 +17,9 @@ var (
 )
 
 func Init() {
-	for _, addr := range conf.ListenAddrs {
+	if conf.ListenAddr != "" {
 		server = new(network.TCPServer)
-		server.Addr = addr
+		server.Addr = conf.ListenAddr
 		server.MaxConnNum = int(math.MaxInt32)
 		server.PendingWriteNum = conf.PendingWriteNum
 		server.LenMsgLen = 4
