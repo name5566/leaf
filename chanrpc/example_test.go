@@ -14,22 +14,22 @@ func Example() {
 
 	// goroutine 1
 	go func() {
-		s.Register("f0", func(args []interface{}) {
-
+		s.Register("f0", func(args []interface{}) (err error) {
+			return
 		})
 
-		s.Register("f1", func(args []interface{}) interface{} {
-			return 1
+		s.Register("f1", func(args []interface{}) (interface{}, error) {
+			return 1, nil
 		})
 
-		s.Register("fn", func(args []interface{}) []interface{} {
-			return []interface{}{1, 2, 3}
+		s.Register("fn", func(args []interface{}) ([]interface{}, error) {
+			return []interface{}{1, 2, 3}, nil
 		})
 
-		s.Register("add", func(args []interface{}) interface{} {
+		s.Register("add", func(args []interface{}) (interface{}, error) {
 			n1 := args[0].(int)
 			n2 := args[1].(int)
-			return n1 + n2
+			return n1 + n2, nil
 		})
 
 		wg.Done()
