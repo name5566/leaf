@@ -7,6 +7,7 @@ var (
 	LogLevel string
 	LogPath  string
 	LogFlag  int
+	LogStack bool
 
 	// console
 	ConsolePort   int
