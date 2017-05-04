@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"runtime"
 )
 
 // levels
@@ -29,9 +30,10 @@ type Logger struct {
 	level      int
 	baseLogger *log.Logger
 	baseFile   *os.File
+	stack bool
 }
 
-func New(strLevel string, pathname string, flag int) (*Logger, error) {
+func New(strLevel string, stack bool, pathname string, flag int) (*Logger, error) {
 	// level
 	var level int
 	switch strings.ToLower(strLevel) {
@@ -77,6 +79,7 @@ func New(strLevel string, pathname string, flag int) (*Logger, error) {
 	logger.level = level
 	logger.baseLogger = baseLogger
 	logger.baseFile = baseFile
+	logger.stack = stack
 
 	return logger, nil
 }
@@ -99,7 +102,17 @@ func (logger *Logger) doPrintf(level int, printLevel string, format string, a ..
 		panic("logger closed")
 	}
 
+	// get caller
+	if logger.stack {
+		pc, _, line, ok := runtime.Caller(2)
+		if ok {
+			format = fmt.Sprintf("%s[%d] %s", runtime.FuncForPC(pc).Name(), line, format)
+		}
+	}
+
 	format = printLevel + format
+
+
 	logger.baseLogger.Output(3, fmt.Sprintf(format, a...))
 
 	if level == fatalLevel {
@@ -123,7 +136,7 @@ func (logger *Logger) Fatal(format string, a ...interface{}) {
 	logger.doPrintf(fatalLevel, printFatalLevel, format, a...)
 }
 
-var gLogger, _ = New("debug", "", log.LstdFlags)
+var gLogger, _ = New("debug", true, "", log.LstdFlags)
 
 // It's dangerous to call the method on logging
 func Export(logger *Logger) {
