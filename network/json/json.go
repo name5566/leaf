@@ -62,7 +62,8 @@ func (p *Processor) SetRouter(msg interface{}, msgRouter *chanrpc.Server) {
 	msgID := msgType.Elem().Name()
 	i, ok := p.msgInfo[msgID]
 	if !ok {
-		log.Fatal("message %v not registered", msgID)
+		p.Register(msg)
+		i, ok = p.msgInfo[msgID]
 	}
 
 	i.msgRouter = msgRouter
@@ -77,7 +78,8 @@ func (p *Processor) SetHandler(msg interface{}, msgHandler MsgHandler) {
 	msgID := msgType.Elem().Name()
 	i, ok := p.msgInfo[msgID]
 	if !ok {
-		log.Fatal("message %v not registered", msgID)
+		p.Register(msg)
+		i, ok = p.msgInfo[msgID]
 	}
 
 	i.msgHandler = msgHandler

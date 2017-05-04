@@ -15,7 +15,7 @@ type TCPClient struct {
 	PendingWriteNum int
 	AutoReconnect   bool
 	NewAgent        func(*TCPConn) Agent
-	conns           ConnSet
+	conn            *TCPConn
 	wg              sync.WaitGroup
 	closeFlag       bool
 
@@ -29,21 +29,14 @@ type TCPClient struct {
 
 func (client *TCPClient) Start() {
 	client.init()
-
-	for i := 0; i < client.ConnNum; i++ {
-		client.wg.Add(1)
-		go client.connect()
-	}
+	client.wg.Add(1)
+	go client.connect()
 }
 
 func (client *TCPClient) init() {
 	client.Lock()
 	defer client.Unlock()
 
-	if client.ConnNum <= 0 {
-		client.ConnNum = 1
-		log.Release("invalid ConnNum, reset to %v", client.ConnNum)
-	}
 	if client.ConnectInterval <= 0 {
 		client.ConnectInterval = 3 * time.Second
 		log.Release("invalid ConnectInterval, reset to %v", client.ConnectInterval)
@@ -55,11 +48,10 @@ func (client *TCPClient) init() {
 	if client.NewAgent == nil {
 		log.Fatal("NewAgent must not be nil")
 	}
-	if client.conns != nil {
+	if client.msgParser != nil {
 		log.Fatal("client is running")
 	}
 
-	client.conns = make(ConnSet)
 	client.closeFlag = false
 
 	// msg parser
@@ -97,18 +89,15 @@ reconnect:
 		conn.Close()
 		return
 	}
-	client.conns[conn] = struct{}{}
+	tcpConn := newTCPConn(conn, client.PendingWriteNum, client.msgParser)
+	client.conn = tcpConn
 	client.Unlock()
 
-	tcpConn := newTCPConn(conn, client.PendingWriteNum, client.msgParser)
 	agent := client.NewAgent(tcpConn)
 	agent.Run()
 
 	// cleanup
 	tcpConn.Close()
-	client.Lock()
-	delete(client.conns, conn)
-	client.Unlock()
 	agent.OnClose()
 
 	if client.AutoReconnect {
@@ -120,10 +109,10 @@ reconnect:
 func (client *TCPClient) Close() {
 	client.Lock()
 	client.closeFlag = true
-	for conn := range client.conns {
-		conn.Close()
+	if client.conn != nil {
+		client.conn.Close()
+		client.conn = nil
 	}
-	client.conns = nil
 	client.Unlock()
 
 	client.wg.Wait()
