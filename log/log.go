@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -107,6 +108,14 @@ func (logger *Logger) doPrintf(level int, printLevel string, format string, a ..
 	}
 }
 
+func getLogLine(format string) string {
+	_, file, line, _ := runtime.Caller(2)
+	if strings.Contains(file, "common/base") {
+		_, file, line, _ = runtime.Caller(3)
+	}
+	return fmt.Sprint(file, "[", line, "]:", format)
+}
+
 func (logger *Logger) Debug(format string, a ...interface{}) {
 	logger.doPrintf(debugLevel, printDebugLevel, format, a...)
 }
@@ -133,18 +142,22 @@ func Export(logger *Logger) {
 }
 
 func Debug(format string, a ...interface{}) {
+	format = getLogLine(format)
 	gLogger.doPrintf(debugLevel, printDebugLevel, format, a...)
 }
 
 func Release(format string, a ...interface{}) {
+	format = getLogLine(format)
 	gLogger.doPrintf(releaseLevel, printReleaseLevel, format, a...)
 }
 
 func Error(format string, a ...interface{}) {
+	format = getLogLine(format)
 	gLogger.doPrintf(errorLevel, printErrorLevel, format, a...)
 }
 
 func Fatal(format string, a ...interface{}) {
+	format = getLogLine(format)
 	gLogger.doPrintf(fatalLevel, printFatalLevel, format, a...)
 }
 
