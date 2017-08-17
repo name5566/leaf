@@ -519,7 +519,7 @@ func init() {
 
 ### Cluster
 
-[支持集群的版本](https://github.com/zsai001/leaf_cluster)
+[支持集群的版本](https://github.com/zsai001/leaf_cluster)（由 @zsai001 支持）
 
 了解更多
 ---------------

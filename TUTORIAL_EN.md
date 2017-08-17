@@ -524,7 +524,7 @@ Refer to [leaf/recordfile](https://github.com/name5566/leaf/blob/master/recordfi
 
 ### Cluster
 
-[Cluster Support](https://github.com/zsai001/leaf_cluster)
+[Cluster version](https://github.com/zsai001/leaf_cluster)(support by @zsai001)
 
 Learn more
 ----------
