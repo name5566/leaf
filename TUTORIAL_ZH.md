@@ -517,10 +517,6 @@ func init() {
 
 更加详细的用法可以参考 [leaf/recordfile](https://github.com/name5566/leaf/blob/master/recordfile)。
 
-### Cluster
-
-[支持集群的版本](https://github.com/zsai001/leaf_cluster)（由 [zsai001](https://github.com/zsai001) 支持）
-
 了解更多
 ---------------
 

@@ -522,10 +522,6 @@ func init() {
 
 Refer to [leaf/recordfile](https://github.com/name5566/leaf/blob/master/recordfile) for more details.
 
-### Cluster
-
-[Cluster version](https://github.com/zsai001/leaf_cluster) (support by [zsai001](https://github.com/zsai001))
-
 Learn more
 ----------
 
