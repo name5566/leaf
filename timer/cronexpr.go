@@ -182,7 +182,7 @@ func (e *CronExpr) matchDay(t time.Time) bool {
 		return 1<<uint(t.Day())&e.dom != 0
 	}
 
-	return 1<<uint(t.Weekday())&e.dow != 0 ||
+	return 1<<uint(t.Weekday())&e.dow != 0 &&
 		1<<uint(t.Day())&e.dom != 0
 }
 
