@@ -31,7 +31,7 @@ leaf.Run(
 )
 ```
 
-The modules of `game`, `gate` and `gate` are registered consecutively. They are required to implement a `Module` interface.
+The modules of `game`, `gate` and `login` are registered consecutively. They are required to implement a `Module` interface.
 
 ```go
 type Module interface {
