@@ -14,12 +14,18 @@ type Processor struct {
 }
 
 type MsgInfo struct {
-	msgType    reflect.Type
-	msgRouter  *chanrpc.Server
-	msgHandler MsgHandler
+	msgType       reflect.Type
+	msgRouter     *chanrpc.Server
+	msgHandler    MsgHandler
+	msgRawHandler MsgHandler
 }
 
 type MsgHandler func([]interface{})
+
+type MsgRaw struct {
+	msgID      string
+	msgRawData json.RawMessage
+}
 
 func NewProcessor() *Processor {
 	p := new(Processor)
@@ -28,7 +34,7 @@ func NewProcessor() *Processor {
 }
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
-func (p *Processor) Register(msg interface{}) {
+func (p *Processor) Register(msg interface{}) string {
 	msgType := reflect.TypeOf(msg)
 	if msgType == nil || msgType.Kind() != reflect.Ptr {
 		log.Fatal("json message pointer required")
@@ -44,6 +50,7 @@ func (p *Processor) Register(msg interface{}) {
 	i := new(MsgInfo)
 	i.msgType = msgType
 	p.msgInfo[msgID] = i
+	return msgID
 }
 
 // It's dangerous to call the method on routing or marshaling (unmarshaling)
@@ -76,8 +83,31 @@ func (p *Processor) SetHandler(msg interface{}, msgHandler MsgHandler) {
 	i.msgHandler = msgHandler
 }
 
+// It's dangerous to call the method on routing or marshaling (unmarshaling)
+func (p *Processor) SetRawHandler(msgID string, msgRawHandler MsgHandler) {
+	i, ok := p.msgInfo[msgID]
+	if !ok {
+		log.Fatal("message %v not registered", msgID)
+	}
+
+	i.msgRawHandler = msgRawHandler
+}
+
 // goroutine safe
 func (p *Processor) Route(msg interface{}, userData interface{}) error {
+	// raw
+	if msgRaw, ok := msg.(MsgRaw); ok {
+		i, ok := p.msgInfo[msgRaw.msgID]
+		if !ok {
+			return fmt.Errorf("message %v not registered", msgRaw.msgID)
+		}
+		if i.msgRawHandler != nil {
+			i.msgRawHandler([]interface{}{msgRaw.msgID, msgRaw.msgRawData, userData})
+		}
+		return nil
+	}
+
+	// json
 	msgType := reflect.TypeOf(msg)
 	if msgType == nil || msgType.Kind() != reflect.Ptr {
 		return errors.New("json message pointer required")
@@ -93,6 +123,10 @@ func (p *Processor) Route(msg interface{}, userData interface{}) error {
 	}
 	if i.msgRouter != nil {
 		i.msgRouter.Go(msgType, msg, userData)
+	}
+
+	if i.msgHandler == nil && i.msgRouter == nil {
+		return fmt.Errorf("message %v have no ProcessFun", msgID)
 	}
 	return nil
 }
@@ -115,8 +149,12 @@ func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
 		}
 
 		// msg
-		msg := reflect.New(i.msgType.Elem()).Interface()
-		return msg, json.Unmarshal(data, msg)
+		if i.msgRawHandler != nil {
+			return MsgRaw{msgID, data}, nil
+		} else {
+			msg := reflect.New(i.msgType.Elem()).Interface()
+			return msg, json.Unmarshal(data, msg)
+		}
 	}
 
 	panic("bug")
@@ -126,6 +164,7 @@ func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
 func (p *Processor) Marshal(msg interface{}) ([][]byte, error) {
 	msgType := reflect.TypeOf(msg)
 	if msgType == nil || msgType.Kind() != reflect.Ptr {
+		log.Error(" json message pointer required fail %v %v", msgType, msgType.Kind())
 		return nil, errors.New("json message pointer required")
 	}
 	msgID := msgType.Elem().Name()
